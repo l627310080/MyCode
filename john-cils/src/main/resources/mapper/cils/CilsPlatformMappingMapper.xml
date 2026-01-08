@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.john.cils.mapper.CilsPlatformMappingMapper">
+
+    <resultMap type="CilsPlatformMapping" id="CilsPlatformMappingResult">
+        <result property="id" column="id"/>
+        <result property="skuId" column="sku_id"/>
+        <result property="platformType" column="platform_type"/>
+        <result property="platformSku" column="platform_sku"/>
+        <result property="salePriceUsd" column="sale_price_usd"/>
+        <result property="syncStatus" column="sync_status"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="selectCilsPlatformMappingVo">
+        select id, sku_id, platform_type, platform_sku, sale_price_usd, sync_status, create_time
+        from cils_platform_mapping
+    </sql>
+
+    <select id="selectCilsPlatformMappingList" parameterType="CilsPlatformMapping"
+            resultMap="CilsPlatformMappingResult">
+        <include refid="selectCilsPlatformMappingVo"/>
+        <where>
+            <if test="skuId != null ">and sku_id = #{skuId}</if>
+            <if test="platformType != null  and platformType != ''">and platform_type = #{platformType}</if>
+            <if test="platformSku != null  and platformSku != ''">and platform_sku = #{platformSku}</if>
+            <if test="salePriceUsd != null ">and sale_price_usd = #{salePriceUsd}</if>
+            <if test="syncStatus != null ">and sync_status = #{syncStatus}</if>
+        </where>
+    </select>
+
+    <select id="selectCilsPlatformMappingById" parameterType="Long" resultMap="CilsPlatformMappingResult">
+        <include refid="selectCilsPlatformMappingVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertCilsPlatformMapping" parameterType="CilsPlatformMapping" useGeneratedKeys="true" keyProperty="id">
+        insert into cils_platform_mapping
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="skuId != null">sku_id,</if>
+            <if test="platformType != null">platform_type,</if>
+            <if test="platformSku != null">platform_sku,</if>
+            <if test="salePriceUsd != null">sale_price_usd,</if>
+            <if test="syncStatus != null">sync_status,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="skuId != null">#{skuId},</if>
+            <if test="platformType != null">#{platformType},</if>
+            <if test="platformSku != null">#{platformSku},</if>
+            <if test="salePriceUsd != null">#{salePriceUsd},</if>
+            <if test="syncStatus != null">#{syncStatus},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateCilsPlatformMapping" parameterType="CilsPlatformMapping">
+        update cils_platform_mapping
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="skuId != null">sku_id = #{skuId},</if>
+            <if test="platformType != null">platform_type = #{platformType},</if>
+            <if test="platformSku != null">platform_sku = #{platformSku},</if>
+            <if test="salePriceUsd != null">sale_price_usd = #{salePriceUsd},</if>
+            <if test="syncStatus != null">sync_status = #{syncStatus},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteCilsPlatformMappingById" parameterType="Long">
+        delete
+        from cils_platform_mapping
+        where id = #{id}
+    </delete>
+
+    <delete id="deleteCilsPlatformMappingByIds" parameterType="String">
+        delete from cils_platform_mapping where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

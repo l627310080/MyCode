@@ -1,20 +1,20 @@
 <template>
   <div>
     <el-dialog
-      v-bind="$attrs"
       :close-on-click-modal="false"
       :modal-append-to-body="false"
-      v-on="$listeners"
-      @open="onOpen"
+      v-bind="$attrs"
       @close="onClose"
+      @open="onOpen"
+      v-on="$listeners"
     >
       <el-row :gutter="0">
         <el-form
           ref="elForm"
           :model="formData"
           :rules="rules"
-          size="small"
           label-width="100px"
+          size="small"
         >
           <el-col :span="24">
             <el-form-item
@@ -23,8 +23,8 @@
             >
               <el-input
                 v-model="formData.label"
-                placeholder="请输入选项名"
                 clearable
+                placeholder="请输入选项名"
               />
             </el-form-item>
           </el-col>
@@ -35,8 +35,8 @@
             >
               <el-input
                 v-model="formData.value"
-                placeholder="请输入选项值"
                 clearable
+                placeholder="请输入选项值"
               >
                 <el-select
                   slot="append"
@@ -46,9 +46,9 @@
                   <el-option
                     v-for="(item, index) in dataTypeOptions"
                     :key="index"
+                    :disabled="item.disabled"
                     :label="item.label"
                     :value="item.value"
-                    :disabled="item.disabled"
                   />
                 </el-select>
               </el-input>
@@ -71,7 +71,7 @@
   </div>
 </template>
 <script>
-import { isNumberStr } from '@/utils/index'
+import {isNumberStr} from '@/utils/index'
 
 export default {
   components: {},
@@ -119,8 +119,10 @@ export default {
       this.dataType = isNumberStr(val) ? 'number' : 'string'
     }
   },
-  created() {},
-  mounted() {},
+  created() {
+  },
+  mounted() {
+  },
   methods: {
     onOpen() {
       this.formData = {
@@ -128,7 +130,8 @@ export default {
         value: undefined
       }
     },
-    onClose() {},
+    onClose() {
+    },
     close() {
       this.$emit('update:visible', false)
     },

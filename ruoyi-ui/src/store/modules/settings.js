@@ -1,7 +1,18 @@
 import defaultSettings from '@/settings'
-import { useDynamicTitle } from '@/utils/dynamicTitle'
+import {useDynamicTitle} from '@/utils/dynamicTitle'
 
-const { sideTheme, showSettings, navType, tagsView, tagsIcon, fixedHeader, sidebarLogo, dynamicTitle, footerVisible, footerContent } = defaultSettings
+const {
+  sideTheme,
+  showSettings,
+  navType,
+  tagsView,
+  tagsIcon,
+  fixedHeader,
+  sidebarLogo,
+  dynamicTitle,
+  footerVisible,
+  footerContent
+} = defaultSettings
 
 const storageSetting = JSON.parse(localStorage.getItem('layout-setting')) || ''
 const state = {
@@ -19,7 +30,7 @@ const state = {
   footerContent: footerContent
 }
 const mutations = {
-  CHANGE_SETTING: (state, { key, value }) => {
+  CHANGE_SETTING: (state, {key, value}) => {
     if (state.hasOwnProperty(key)) {
       state[key] = value
     }
@@ -31,11 +42,11 @@ const mutations = {
 
 const actions = {
   // 修改布局设置
-  changeSetting({ commit }, data) {
+  changeSetting({commit}, data) {
     commit('CHANGE_SETTING', data)
   },
   // 设置网页标题
-  setTitle({ commit }, title) {
+  setTitle({commit}, title) {
     commit('SET_TITLE', title)
     useDynamicTitle()
   }

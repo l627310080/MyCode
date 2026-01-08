@@ -5,22 +5,22 @@
     @select="handleSelect"
   >
     <template v-for="(item, index) in topMenus">
-      <el-menu-item :style="{'--theme': theme}" :index="item.path" :key="index" v-if="index < visibleNumber">
+      <el-menu-item v-if="index < visibleNumber" :key="index" :index="item.path" :style="{'--theme': theme}">
         <svg-icon
-        v-if="item.meta && item.meta.icon && item.meta.icon !== '#'"
-        :icon-class="item.meta.icon"/>
+          v-if="item.meta && item.meta.icon && item.meta.icon !== '#'"
+          :icon-class="item.meta.icon"/>
         {{ item.meta.title }}
       </el-menu-item>
     </template>
 
     <!-- 顶部菜单超出数量折叠 -->
-    <el-submenu :style="{'--theme': theme}" index="more" :key="visibleNumber" v-if="topMenus.length > visibleNumber">
+    <el-submenu v-if="topMenus.length > visibleNumber" :key="visibleNumber" :style="{'--theme': theme}" index="more">
       <template slot="title">更多菜单</template>
       <template v-for="(item, index) in topMenus">
         <el-menu-item
-          :index="item.path"
+          v-if="index >= visibleNumber"
           :key="index"
-          v-if="index >= visibleNumber">
+          :index="item.path">
           <svg-icon
             v-if="item.meta && item.meta.icon && item.meta.icon !== '#'"
             :icon-class="item.meta.icon"/>
@@ -32,8 +32,8 @@
 </template>
 
 <script>
-import { constantRoutes } from "@/router"
-import { isHttp } from "@/utils/validate"
+import {constantRoutes} from "@/router"
+import {isHttp} from "@/utils/validate"
 
 // 隐藏侧边栏路由
 const hideList = ['/index', '/user/profile']
@@ -76,10 +76,10 @@ export default {
       this.routers.map((router) => {
         for (var item in router.children) {
           if (router.children[item].parentPath === undefined) {
-            if(router.path === "/") {
+            if (router.path === "/") {
               router.children[item].path = "/" + router.children[item].path
             } else {
-              if(!isHttp(router.children[item].path)) {
+              if (!isHttp(router.children[item].path)) {
                 router.children[item].path = router.path + "/" + router.children[item].path
               }
             }
@@ -100,7 +100,7 @@ export default {
           activePath = "/" + tmpPath.substring(0, tmpPath.indexOf("/"))
           this.$store.dispatch('app/toggleSideBarHide', false)
         }
-      } else if(!this.$route.children) {
+      } else if (!this.$route.children) {
         activePath = path
         this.$store.dispatch('app/toggleSideBarHide', true)
       }
@@ -135,9 +135,9 @@ export default {
         const routeMenu = this.childrenMenus.find(item => item.path === key)
         if (routeMenu && routeMenu.query) {
           let query = JSON.parse(routeMenu.query)
-          this.$router.push({ path: key, query: query })
+          this.$router.push({path: key, query: query})
         } else {
-          this.$router.push({ path: key })
+          this.$router.push({path: key})
         }
         this.$store.dispatch('app/toggleSideBarHide', true)
       } else {
@@ -156,7 +156,7 @@ export default {
           }
         })
       }
-      if(routes.length > 0) {
+      if (routes.length > 0) {
         this.$store.commit("SET_SIDEBAR_ROUTERS", routes)
       } else {
         this.$store.dispatch('app/toggleSideBarHide', true)

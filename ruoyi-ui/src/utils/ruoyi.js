@@ -35,7 +35,9 @@ export function parseTime(time, pattern) {
   const time_str = format.replace(/{(y|m|d|h|i|s|a)+}/g, (result, key) => {
     let value = formatObj[key]
     // Note: getDay() returns 0 on Sunday
-    if (key === 'a') { return ['日', '一', '二', '三', '四', '五', '六'][value] }
+    if (key === 'a') {
+      return ['日', '一', '二', '三', '四', '五', '六'][value]
+    }
     if (result.length > 0 && value < 10) {
       value = '0' + value
     }
@@ -86,7 +88,7 @@ export function selectDictLabel(datas, value) {
 
 // 回显数据字典（字符串、数组）
 export function selectDictLabels(datas, value, separator) {
-  if (value === undefined || value.length ===0) {
+  if (value === undefined || value.length === 0) {
     return ""
   }
   if (Array.isArray(value)) {
@@ -185,9 +187,9 @@ export function handleTree(data, id, parentId, children) {
 }
 
 /**
-* 参数处理
-* @param {*} params  参数
-*/
+ * 参数处理
+ * @param {*} params  参数
+ */
 export function tansParams(params) {
   let result = ''
   for (const propName of Object.keys(params)) {

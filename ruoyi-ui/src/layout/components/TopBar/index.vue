@@ -1,10 +1,11 @@
 <template>
-  <el-menu class="topbar-menu" :default-active="activeMenu" :active-text-color="theme" mode="horizontal">
-    <sidebar-item :key="route.path + index" v-for="(route, index) in topMenus" :item="route" :base-path="route.path" />
+  <el-menu :active-text-color="theme" :default-active="activeMenu" class="topbar-menu" mode="horizontal">
+    <sidebar-item v-for="(route, index) in topMenus" :key="route.path + index" :base-path="route.path" :item="route"/>
 
-    <el-submenu index="more" class="el-submenu__hide-arrow" v-if="moreRoutes.length > 0">
+    <el-submenu v-if="moreRoutes.length > 0" class="el-submenu__hide-arrow" index="more">
       <template slot="title">更多菜单</template>
-      <sidebar-item :key="route.path + index" v-for="(route, index) in moreRoutes" :item="route" :base-path="route.path" />
+      <sidebar-item v-for="(route, index) in moreRoutes" :key="route.path + index" :base-path="route.path"
+                    :item="route"/>
     </el-submenu>
   </el-menu>
 </template>
@@ -13,7 +14,7 @@
 import SidebarItem from '../Sidebar/SidebarItem'
 
 export default {
-  components: { SidebarItem },
+  components: {SidebarItem},
   data() {
     return {
       // 顶部栏初始数
@@ -33,7 +34,7 @@ export default {
     },
     // 默认激活的菜单
     activeMenu() {
-      const { meta, path } = this.$route
+      const {meta, path} = this.$route
       if (meta.activeMenu) {
         return meta.activeMenu
       }
@@ -78,7 +79,7 @@ export default {
   margin: 0 15px !important;
 }
 
-/* topbar more arrow */ 
+/* topbar more arrow */
 .topbar-menu .el-submenu .el-submenu__icon-arrow {
   position: static;
   vertical-align: middle;
@@ -91,7 +92,7 @@ export default {
   height: 55px;
 }
 
-.el-menu--horizontal .el-menu .el-menu-item, .el-menu--horizontal .el-menu .el-submenu__title{
+.el-menu--horizontal .el-menu .el-menu-item, .el-menu--horizontal .el-menu .el-submenu__title {
   color: #303133;
 }
 </style>

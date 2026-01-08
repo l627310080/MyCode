@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.john.cils.mapper.CilsPythonRuleMapper">
+
+    <resultMap type="CilsPythonRule" id="CilsPythonRuleResult">
+        <result property="id" column="id"/>
+        <result property="ruleName" column="rule_name"/>
+        <result property="scriptPath" column="script_path"/>
+        <result property="ruleType" column="rule_type"/>
+        <result property="strategyType" column="strategy_type"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="isActive" column="is_active"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="selectCilsPythonRuleVo">
+        select id,
+               rule_name,
+               script_path,
+               rule_type,
+               strategy_type,
+               category_id,
+               is_active,
+               create_time
+        from cils_python_rule
+    </sql>
+
+    <select id="selectCilsPythonRuleList" parameterType="CilsPythonRule" resultMap="CilsPythonRuleResult">
+        <include refid="selectCilsPythonRuleVo"/>
+        <where>
+            <if test="ruleName != null  and ruleName != ''">and rule_name like concat('%', #{ruleName}, '%')</if>
+            <if test="scriptPath != null  and scriptPath != ''">and script_path = #{scriptPath}</if>
+            <if test="ruleType != null  and ruleType != ''">and rule_type = #{ruleType}</if>
+            <if test="strategyType != null  and strategyType != ''">and strategy_type = #{strategyType}</if>
+            <if test="categoryId != null ">and category_id = #{categoryId}</if>
+            <if test="isActive != null ">and is_active = #{isActive}</if>
+        </where>
+    </select>
+
+    <!-- 专门用于校验引擎的查询方法 -->
+    <select id="selectRulesForSpu" resultMap="CilsPythonRuleResult">
+        <include refid="selectCilsPythonRuleVo"/>
+        where is_active = 1
+        and (
+        category_id is null
+        or category_id = 0
+        or category_id = #{categoryId}
+        )
+    </select>
+
+    <select id="selectCilsPythonRuleById" parameterType="Long" resultMap="CilsPythonRuleResult">
+        <include refid="selectCilsPythonRuleVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertCilsPythonRule" parameterType="CilsPythonRule" useGeneratedKeys="true" keyProperty="id">
+        insert into cils_python_rule
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="ruleName != null and ruleName != ''">rule_name,</if>
+            <if test="scriptPath != null and scriptPath != ''">script_path,</if>
+            <if test="ruleType != null">rule_type,</if>
+            <if test="strategyType != null">strategy_type,</if>
+            <if test="categoryId != null">category_id,</if>
+            <if test="isActive != null">is_active,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="ruleName != null and ruleName != ''">#{ruleName},</if>
+            <if test="scriptPath != null and scriptPath != ''">#{scriptPath},</if>
+            <if test="ruleType != null">#{ruleType},</if>
+            <if test="strategyType != null">#{strategyType},</if>
+            <if test="categoryId != null">#{categoryId},</if>
+            <if test="isActive != null">#{isActive},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateCilsPythonRule" parameterType="CilsPythonRule">
+        update cils_python_rule
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="ruleName != null and ruleName != ''">rule_name = #{ruleName},</if>
+            <if test="scriptPath != null and scriptPath != ''">script_path = #{scriptPath},</if>
+            <if test="ruleType != null">rule_type = #{ruleType},</if>
+            <if test="strategyType != null">strategy_type = #{strategyType},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="isActive != null">is_active = #{isActive},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteCilsPythonRuleById" parameterType="Long">
+        delete
+        from cils_python_rule
+        where id = #{id}
+    </delete>
+
+    <delete id="deleteCilsPythonRuleByIds" parameterType="String">
+        delete from cils_python_rule where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

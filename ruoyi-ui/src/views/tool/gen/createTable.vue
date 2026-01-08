@@ -1,8 +1,8 @@
 <template>
   <!-- 创建表 -->
-  <el-dialog title="创建表" :visible.sync="visible" width="800px" top="5vh" append-to-body>
+  <el-dialog :visible.sync="visible" append-to-body title="创建表" top="5vh" width="800px">
     <span>创建表语句(支持多个建表语句)：</span>
-    <el-input type="textarea" :rows="10" placeholder="请输入文本" v-model="content"></el-input>
+    <el-input v-model="content" :rows="10" placeholder="请输入文本" type="textarea"></el-input>
     <div slot="footer" class="dialog-footer">
       <el-button type="primary" @click="handleCreateTable">确 定</el-button>
       <el-button @click="visible = false">取 消</el-button>
@@ -11,7 +11,8 @@
 </template>
 
 <script>
-import { createTable } from "@/api/tool/gen"
+import {createTable} from "@/api/tool/gen"
+
 export default {
   data() {
     return {
@@ -32,7 +33,7 @@ export default {
         this.$modal.msgError("请输入建表语句")
         return
       }
-      createTable({ sql: this.content }).then(res => {
+      createTable({sql: this.content}).then(res => {
         this.$modal.msgSuccess(res.msg)
         if (res.code === 200) {
           this.visible = false

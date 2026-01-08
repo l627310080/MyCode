@@ -41,7 +41,11 @@ nbdist/
 *.log
 *.xml.versionsBackup
 *.swp
+*.md
 
 !*/build/*.java
 !*/build/*.html
 !*/build/*.xml
+
+# 不上传的文件夹
+/Z素材

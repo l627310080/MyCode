@@ -1,5 +1,6 @@
 <template>
-  <el-drawer size="280px" :visible="showSettings" :with-header="false" :append-to-body="true" :before-close="closeSetting" :lock-scroll="false">
+  <el-drawer :append-to-body="true" :before-close="closeSetting" :lock-scroll="false" :visible="showSettings"
+             :with-header="false" size="280px">
     <div class="drawer-container">
       <div>
         <div class="setting-drawer-content">
@@ -8,18 +9,21 @@
           </div>
           <div class="nav-wrap">
             <el-tooltip content="左侧菜单" placement="bottom">
-              <div class="item left" @click="handleNavType(1)" :style="{'--theme': theme}" :class="{ activeItem: navType == 1 }">
+              <div :class="{ activeItem: navType == 1 }" :style="{'--theme': theme}" class="item left"
+                   @click="handleNavType(1)">
                 <b></b><b></b>
               </div>
             </el-tooltip>
 
             <el-tooltip content="混合菜单" placement="bottom">
-              <div class="item mix" @click="handleNavType(2)" :style="{'--theme': theme}" :class="{ activeItem: navType == 2 }">
+              <div :class="{ activeItem: navType == 2 }" :style="{'--theme': theme}" class="item mix"
+                   @click="handleNavType(2)">
                 <b></b><b></b>
               </div>
             </el-tooltip>
             <el-tooltip content="顶部菜单" placement="bottom">
-              <div class="item top" @click="handleNavType(3)" :style="{'--theme': theme}" :class="{ activeItem: navType == 3 }">
+              <div :class="{ activeItem: navType == 3 }" :style="{'--theme': theme}" class="item top"
+                   @click="handleNavType(3)">
                 <b></b><b></b>
               </div>
             </el-tooltip>
@@ -29,21 +33,27 @@
           </div>
           <div class="setting-drawer-block-checbox">
             <div class="setting-drawer-block-checbox-item" @click="handleTheme('theme-dark')">
-              <img src="@/assets/images/dark.svg" alt="dark">
-              <div v-if="sideTheme === 'theme-dark'" class="setting-drawer-block-checbox-selectIcon" style="display: block;">
+              <img alt="dark" src="@/assets/images/dark.svg">
+              <div v-if="sideTheme === 'theme-dark'" class="setting-drawer-block-checbox-selectIcon"
+                   style="display: block;">
                 <i aria-label="图标: check" class="anticon anticon-check">
-                  <svg viewBox="64 64 896 896" data-icon="check" width="1em" height="1em" :fill="theme" aria-hidden="true" focusable="false" class="">
-                    <path d="M912 190h-69.9c-9.8 0-19.1 4.5-25.1 12.2L404.7 724.5 207 474a32 32 0 0 0-25.1-12.2H112c-6.7 0-10.4 7.7-6.3 12.9l273.9 347c12.8 16.2 37.4 16.2 50.3 0l488.4-618.9c4.1-5.1.4-12.8-6.3-12.8z"/>
+                  <svg :fill="theme" aria-hidden="true" class="" data-icon="check" focusable="false"
+                       height="1em" viewBox="64 64 896 896" width="1em">
+                    <path
+                      d="M912 190h-69.9c-9.8 0-19.1 4.5-25.1 12.2L404.7 724.5 207 474a32 32 0 0 0-25.1-12.2H112c-6.7 0-10.4 7.7-6.3 12.9l273.9 347c12.8 16.2 37.4 16.2 50.3 0l488.4-618.9c4.1-5.1.4-12.8-6.3-12.8z"/>
                   </svg>
                 </i>
               </div>
             </div>
             <div class="setting-drawer-block-checbox-item" @click="handleTheme('theme-light')">
-              <img src="@/assets/images/light.svg" alt="light">
-              <div v-if="sideTheme === 'theme-light'" class="setting-drawer-block-checbox-selectIcon" style="display: block;">
+              <img alt="light" src="@/assets/images/light.svg">
+              <div v-if="sideTheme === 'theme-light'" class="setting-drawer-block-checbox-selectIcon"
+                   style="display: block;">
                 <i aria-label="图标: check" class="anticon anticon-check">
-                  <svg viewBox="64 64 896 896" data-icon="check" width="1em" height="1em" :fill="theme" aria-hidden="true" focusable="false" class="">
-                    <path d="M912 190h-69.9c-9.8 0-19.1 4.5-25.1 12.2L404.7 724.5 207 474a32 32 0 0 0-25.1-12.2H112c-6.7 0-10.4 7.7-6.3 12.9l273.9 347c12.8 16.2 37.4 16.2 50.3 0l488.4-618.9c4.1-5.1.4-12.8-6.3-12.8z"/>
+                  <svg :fill="theme" aria-hidden="true" class="" data-icon="check" focusable="false"
+                       height="1em" viewBox="64 64 896 896" width="1em">
+                    <path
+                      d="M912 190h-69.9c-9.8 0-19.1 4.5-25.1 12.2L404.7 724.5 207 474a32 32 0 0 0-25.1-12.2H112c-6.7 0-10.4 7.7-6.3 12.9l273.9 347c12.8 16.2 37.4 16.2 50.3 0l488.4-618.9c4.1-5.1.4-12.8-6.3-12.8z"/>
                   </svg>
                 </i>
               </div>
@@ -52,7 +62,7 @@
 
           <div class="drawer-item">
             <span>主题颜色</span>
-            <theme-picker style="float: right;height: 26px;margin: -3px 8px 0 0;" @change="themeChange" />
+            <theme-picker style="float: right;height: 26px;margin: -3px 8px 0 0;" @change="themeChange"/>
           </div>
         </div>
 
@@ -62,38 +72,39 @@
 
         <div class="drawer-item">
           <span>开启 Tags-Views</span>
-          <el-switch v-model="tagsView" class="drawer-switch" />
+          <el-switch v-model="tagsView" class="drawer-switch"/>
         </div>
 
         <div class="drawer-item">
           <span>显示页签图标</span>
-          <el-switch v-model="tagsIcon" :disabled="!tagsView" class="drawer-switch" />
+          <el-switch v-model="tagsIcon" :disabled="!tagsView" class="drawer-switch"/>
         </div>
 
         <div class="drawer-item">
           <span>固定 Header</span>
-          <el-switch v-model="fixedHeader" class="drawer-switch" />
+          <el-switch v-model="fixedHeader" class="drawer-switch"/>
         </div>
 
         <div class="drawer-item">
           <span>显示 Logo</span>
-          <el-switch v-model="sidebarLogo" class="drawer-switch" />
+          <el-switch v-model="sidebarLogo" class="drawer-switch"/>
         </div>
 
         <div class="drawer-item">
           <span>动态标题</span>
-          <el-switch v-model="dynamicTitle" class="drawer-switch" />
+          <el-switch v-model="dynamicTitle" class="drawer-switch"/>
         </div>
 
         <div class="drawer-item">
           <span>底部版权</span>
-          <el-switch v-model="footerVisible" class="drawer-switch" />
+          <el-switch v-model="footerVisible" class="drawer-switch"/>
         </div>
 
         <el-divider/>
 
-        <el-button size="small" type="primary" plain icon="el-icon-document-add" @click="saveSetting">保存配置</el-button>
-        <el-button size="small" plain icon="el-icon-refresh" @click="resetSetting">重置配置</el-button>
+        <el-button icon="el-icon-document-add" plain size="small" type="primary" @click="saveSetting">保存配置
+        </el-button>
+        <el-button icon="el-icon-refresh" plain size="small" @click="resetSetting">重置配置</el-button>
       </div>
     </div>
   </el-drawer>
@@ -103,7 +114,7 @@
 import ThemePicker from '@/components/ThemePicker'
 
 export default {
-  components: { ThemePicker },
+  components: {ThemePicker},
   expose: ['openSetting'],
   data() {
     return {
@@ -194,7 +205,7 @@ export default {
           this.$store.dispatch("app/toggleSideBarHide", true)
         }
         if ([1, 3].includes(val)) {
-          this.$store.commit("SET_SIDEBAR_ROUTERS",this.$store.state.permission.defaultRoutes)
+          this.$store.commit("SET_SIDEBAR_ROUTERS", this.$store.state.permission.defaultRoutes)
         }
       },
       immediate: true,
@@ -226,7 +237,7 @@ export default {
     openSetting() {
       this.showSettings = true
     },
-    closeSetting(){
+    closeSetting() {
       this.showSettings = false
     },
     saveSetting() {
@@ -353,6 +364,7 @@ export default {
       height: 30%;
       background: #fff;
     }
+
     b:last-child {
       width: 30%;
       background: #1b2a47;
@@ -362,6 +374,7 @@ export default {
       border-radius: 4px 0 0 4px;
     }
   }
+
   .mix {
     b:first-child {
       border-radius: 4px 4px 0 0;
@@ -369,6 +382,7 @@ export default {
       height: 30%;
       background: #1b2a47;
     }
+
     b:last-child {
       width: 30%;
       background: #1b2a47;
@@ -377,6 +391,7 @@ export default {
       border-radius: 0 0 0 4px;
     }
   }
+
   .top {
     b:first-child {
       display: block;

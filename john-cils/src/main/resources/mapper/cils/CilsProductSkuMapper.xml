@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.john.cils.mapper.CilsProductSkuMapper">
+
+    <resultMap type="CilsProductSku" id="CilsProductSkuResult">
+        <result property="id" column="id"/>
+        <result property="spuId" column="spu_id"/>
+        <result property="skuCode" column="sku_code"/>
+        <result property="specInfo" column="spec_info"/>
+        <result property="skuImage" column="sku_image"/>
+        <result property="purchasePrice" column="purchase_price"/>
+        <result property="stockQty" column="stock_qty"/>
+        <result property="weightKg" column="weight_kg"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="selectCilsProductSkuVo">
+        select id,
+               spu_id,
+               sku_code,
+               spec_info,
+               sku_image,
+               purchase_price,
+               stock_qty,
+               weight_kg,
+               create_time
+        from cils_product_sku
+    </sql>
+
+    <select id="selectCilsProductSkuList" parameterType="CilsProductSku" resultMap="CilsProductSkuResult">
+        <include refid="selectCilsProductSkuVo"/>
+        <where>
+            <if test="spuId != null ">and spu_id = #{spuId}</if>
+            <if test="skuCode != null  and skuCode != ''">and sku_code = #{skuCode}</if>
+        </where>
+    </select>
+
+    <select id="selectCilsProductSkuById" parameterType="Long" resultMap="CilsProductSkuResult">
+        <include refid="selectCilsProductSkuVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertCilsProductSku" parameterType="CilsProductSku" useGeneratedKeys="true" keyProperty="id">
+        insert into cils_product_sku
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="spuId != null">spu_id,</if>
+            <if test="skuCode != null and skuCode != ''">sku_code,</if>
+            <if test="specInfo != null">spec_info,</if>
+            <if test="skuImage != null">sku_image,</if>
+            <if test="purchasePrice != null">purchase_price,</if>
+            <if test="stockQty != null">stock_qty,</if>
+            <if test="weightKg != null">weight_kg,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="spuId != null">#{spuId},</if>
+            <if test="skuCode != null and skuCode != ''">#{skuCode},</if>
+            <if test="specInfo != null">#{specInfo},</if>
+            <if test="skuImage != null">#{skuImage},</if>
+            <if test="purchasePrice != null">#{purchasePrice},</if>
+            <if test="stockQty != null">#{stockQty},</if>
+            <if test="weightKg != null">#{weightKg},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateCilsProductSku" parameterType="CilsProductSku">
+        update cils_product_sku
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="spuId != null">spu_id = #{spuId},</if>
+            <if test="skuCode != null and skuCode != ''">sku_code = #{skuCode},</if>
+            <if test="specInfo != null">spec_info = #{specInfo},</if>
+            <if test="skuImage != null">sku_image = #{skuImage},</if>
+            <if test="purchasePrice != null">purchase_price = #{purchasePrice},</if>
+            <if test="stockQty != null">stock_qty = #{stockQty},</if>
+            <if test="weightKg != null">weight_kg = #{weightKg},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteCilsProductSkuById" parameterType="Long">
+        delete
+        from cils_product_sku
+        where id = #{id}
+    </delete>
+
+    <delete id="deleteCilsProductSkuByIds" parameterType="String">
+        delete from cils_product_sku where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

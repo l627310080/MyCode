@@ -47,8 +47,9 @@
 .mb10 {
   margin-bottom: 10px;
 }
+
 .ml10 {
-	margin-left: 10px;
+  margin-left: 10px;
 }
 
 .mt20 {
@@ -62,8 +63,9 @@
 .mb20 {
   margin-bottom: 20px;
 }
+
 .ml20 {
-	margin-left: 20px;
+  margin-left: 20px;
 }
 
 .h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
@@ -73,7 +75,7 @@
   color: inherit;
 }
 
-.el-message-box__status + .el-message-box__message{
+.el-message-box__status + .el-message-box__message {
   word-break: break-word;
 }
 
@@ -156,9 +158,9 @@
 }
 
 /** 表格更多操作下拉样式 */
-.el-table .el-dropdown-link,.el-table .el-dropdown-selfdefine {
-	cursor: pointer;
-	margin-left: 5px;
+.el-table .el-dropdown-link, .el-table .el-dropdown-selfdefine {
+  cursor: pointer;
+  margin-left: 5px;
 }
 
 .el-table .el-dropdown, .el-icon-arrow-down {
@@ -293,5 +295,5 @@
 
 /* 分割面板样式 */
 .splitpanes.default-theme .splitpanes__pane {
-  background-color: #fff!important;
+  background-color: #fff !important;
 }

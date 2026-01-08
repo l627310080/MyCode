@@ -1,8 +1,8 @@
 import router from '@/router'
-import { MessageBox, } from 'element-ui'
-import { login, logout, getInfo } from '@/api/login'
-import { getToken, setToken, removeToken } from '@/utils/auth'
-import { isHttp, isEmpty } from "@/utils/validate"
+import {MessageBox,} from 'element-ui'
+import {getInfo, login, logout} from '@/api/login'
+import {getToken, removeToken, setToken} from '@/utils/auth'
+import {isEmpty, isHttp} from "@/utils/validate"
 import defAva from '@/assets/images/profile.jpg'
 
 const user = {
@@ -42,7 +42,7 @@ const user = {
 
   actions: {
     // 登录
-    Login({ commit }, userInfo) {
+    Login({commit}, userInfo) {
       const username = userInfo.username.trim()
       const password = userInfo.password
       const code = userInfo.code
@@ -59,7 +59,7 @@ const user = {
     },
 
     // 获取用户信息
-    GetInfo({ commit, state }) {
+    GetInfo({commit, state}) {
       return new Promise((resolve, reject) => {
         getInfo().then(res => {
           const user = res.user
@@ -78,16 +78,26 @@ const user = {
           commit('SET_NICK_NAME', user.nickName)
           commit('SET_AVATAR', avatar)
           /* 初始密码提示 */
-          if(res.isDefaultModifyPwd) {
-            MessageBox.confirm('您的密码还是初始密码，请修改密码！',  '安全提示', {  confirmButtonText: '确定',  cancelButtonText: '取消',  type: 'warning' }).then(() => {
-              router.push({ name: 'Profile', params: { activeTab: 'resetPwd' } })
-            }).catch(() => {})
+          if (res.isDefaultModifyPwd) {
+            MessageBox.confirm('您的密码还是初始密码，请修改密码！', '安全提示', {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning'
+            }).then(() => {
+              router.push({name: 'Profile', params: {activeTab: 'resetPwd'}})
+            }).catch(() => {
+            })
           }
           /* 过期密码提示 */
-          if(!res.isDefaultModifyPwd && res.isPasswordExpired) {
-            MessageBox.confirm('您的密码已过期，请尽快修改密码！',  '安全提示', {  confirmButtonText: '确定',  cancelButtonText: '取消',  type: 'warning' }).then(() => {
-              router.push({ name: 'Profile', params: { activeTab: 'resetPwd' } })
-            }).catch(() => {})
+          if (!res.isDefaultModifyPwd && res.isPasswordExpired) {
+            MessageBox.confirm('您的密码已过期，请尽快修改密码！', '安全提示', {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning'
+            }).then(() => {
+              router.push({name: 'Profile', params: {activeTab: 'resetPwd'}})
+            }).catch(() => {
+            })
           }
           resolve(res)
         }).catch(error => {
@@ -97,7 +107,7 @@ const user = {
     },
 
     // 退出系统
-    LogOut({ commit, state }) {
+    LogOut({commit, state}) {
       return new Promise((resolve, reject) => {
         logout(state.token).then(() => {
           commit('SET_TOKEN', '')
@@ -112,7 +122,7 @@ const user = {
     },
 
     // 前端 登出
-    FedLogOut({ commit }) {
+    FedLogOut({commit}) {
       return new Promise(resolve => {
         commit('SET_TOKEN', '')
         removeToken()

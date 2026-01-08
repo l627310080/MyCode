@@ -11,7 +11,7 @@ export function isPathMatch(pattern, path) {
 }
 
 /**
- * 判断value字符串是否为空 
+ * 判断value字符串是否为空
  * @param {string} value
  * @returns {Boolean}
  */
@@ -23,7 +23,7 @@ export function isEmpty(value) {
 }
 
 /**
- * 判断url是否是http或https 
+ * 判断url是否是http或https
  * @param {string} url
  * @returns {Boolean}
  */
