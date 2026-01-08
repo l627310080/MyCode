@@ -3,8 +3,8 @@
     <el-pagination
       :background="background"
       :current-page.sync="currentPage"
-      :page-size.sync="pageSize"
       :layout="layout"
+      :page-size.sync="pageSize"
       :page-sizes="pageSizes"
       :pager-count="pagerCount"
       :total="total"
@@ -16,7 +16,7 @@
 </template>
 
 <script>
-import { scrollTo } from '@/utils/scroll-to'
+import {scrollTo} from '@/utils/scroll-to'
 
 export default {
   name: 'Pagination',
@@ -62,8 +62,7 @@ export default {
     }
   },
   data() {
-    return {
-    }
+    return {}
   },
   computed: {
     currentPage: {
@@ -88,13 +87,13 @@ export default {
       if (this.currentPage * val > this.total) {
         this.currentPage = 1
       }
-      this.$emit('pagination', { page: this.currentPage, limit: val })
+      this.$emit('pagination', {page: this.currentPage, limit: val})
       if (this.autoScroll) {
         scrollTo(0, 800)
       }
     },
     handleCurrentChange(val) {
-      this.$emit('pagination', { page: val, limit: this.pageSize })
+      this.$emit('pagination', {page: val, limit: this.pageSize})
       if (this.autoScroll) {
         scrollTo(0, 800)
       }
@@ -107,6 +106,7 @@ export default {
 .pagination-container {
   background: #fff;
 }
+
 .pagination-container.hidden {
   display: none;
 }

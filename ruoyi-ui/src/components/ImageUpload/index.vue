@@ -1,40 +1,40 @@
 <template>
   <div class="component-upload-image">
     <el-upload
-      multiple
-      :disabled="disabled"
+      ref="imageUpload"
       :action="uploadImgUrl"
-      list-type="picture-card"
-      :on-success="handleUploadSuccess"
       :before-upload="handleBeforeUpload"
+      :class="{hide: this.fileList.length >= this.limit}"
       :data="data"
+      :disabled="disabled"
+      :file-list="fileList"
+      :headers="headers"
       :limit="limit"
       :on-error="handleUploadError"
       :on-exceed="handleExceed"
-      ref="imageUpload"
-      :on-remove="handleDelete"
-      :show-file-list="true"
-      :headers="headers"
-      :file-list="fileList"
       :on-preview="handlePictureCardPreview"
-      :class="{hide: this.fileList.length >= this.limit}"
+      :on-remove="handleDelete"
+      :on-success="handleUploadSuccess"
+      :show-file-list="true"
+      list-type="picture-card"
+      multiple
     >
       <i class="el-icon-plus"></i>
     </el-upload>
 
     <!-- 上传提示 -->
-    <div class="el-upload__tip" slot="tip" v-if="showTip && !disabled">
+    <div v-if="showTip && !disabled" slot="tip" class="el-upload__tip">
       请上传
-      <template v-if="fileSize"> 大小不超过 <b style="color: #f56c6c">{{ fileSize }}MB</b> </template>
-      <template v-if="fileType"> 格式为 <b style="color: #f56c6c">{{ fileType.join("/") }}</b> </template>
+      <template v-if="fileSize"> 大小不超过 <b style="color: #f56c6c">{{ fileSize }}MB</b></template>
+      <template v-if="fileType"> 格式为 <b style="color: #f56c6c">{{ fileType.join("/") }}</b></template>
       的文件
     </div>
 
     <el-dialog
       :visible.sync="dialogVisible"
+      append-to-body
       title="预览"
       width="800"
-      append-to-body
     >
       <img
         :src="dialogImageUrl"
@@ -45,8 +45,8 @@
 </template>
 
 <script>
-import { getToken } from "@/utils/auth"
-import { isExternal } from "@/utils/validate"
+import {getToken} from "@/utils/auth"
+import {isExternal} from "@/utils/validate"
 import Sortable from 'sortablejs'
 
 export default {
@@ -68,7 +68,7 @@ export default {
     },
     // 大小限制(MB)
     fileSize: {
-       type: Number,
+      type: Number,
       default: 5
     },
     // 文件类型, 例如['png', 'jpg', 'jpeg']
@@ -131,9 +131,9 @@ export default {
           this.fileList = list.map(item => {
             if (typeof item === "string") {
               if (item.indexOf(this.baseUrl) === -1 && !isExternal(item)) {
-                  item = { name: this.baseUrl + item, url: this.baseUrl + item }
+                item = {name: this.baseUrl + item, url: this.baseUrl + item}
               } else {
-                  item = { name: item, url: item }
+                item = {name: item, url: item}
               }
             }
             return item
@@ -196,7 +196,7 @@ export default {
     // 上传成功回调
     handleUploadSuccess(res, file) {
       if (res.code === 200) {
-        this.uploadList.push({ name: res.fileName, url: res.fileName })
+        this.uploadList.push({name: res.fileName, url: res.fileName})
         this.uploadedSuccessfully()
       } else {
         this.number--
@@ -248,7 +248,7 @@ export default {
   }
 }
 </script>
-<style scoped lang="scss">
+<style lang="scss" scoped>
 // .el-upload--picture-card 控制加号部分
 ::v-deep.hide .el-upload--picture-card {
   display: none;
@@ -256,7 +256,7 @@ export default {
 
 ::v-deep .el-upload-list--picture-card.is-disabled + .el-upload--picture-card {
   display: none !important;
-} 
+}
 
 // 去掉动画效果
 ::v-deep .el-list-enter-active,

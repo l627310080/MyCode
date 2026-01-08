@@ -23,7 +23,7 @@ module.exports = {
    * 是否显示 tagsView
    */
   tagsView: true,
-  
+
   /**
    * 显示页签图标
    */

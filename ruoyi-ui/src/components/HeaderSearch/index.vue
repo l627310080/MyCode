@@ -1,21 +1,21 @@
 <template>
   <div class="header-search">
-    <svg-icon class-name="search-icon" icon-class="search" @click.stop="click" />
+    <svg-icon class-name="search-icon" icon-class="search" @click.stop="click"/>
     <el-dialog
+      :show-close="false"
       :visible.sync="show"
+      append-to-body
       width="600px"
       @close="close"
-      :show-close="false"
-      append-to-body
     >
       <el-input
-        v-model="search"
         ref="headerSearchSelectRef"
+        v-model="search"
+        clearable
+        placeholder="菜单搜索，支持标题、URL模糊查询"
+        prefix-icon="el-icon-search"
         size="large"
         @input="querySearch"
-        prefix-icon="el-icon-search"
-        placeholder="菜单搜索，支持标题、URL模糊查询"
-        clearable
         @keyup.enter.native="selectActiveResult"
         @keydown.up.native="navigateResult('up')"
         @keydown.down.native="navigateResult('down')"
@@ -23,9 +23,10 @@
       </el-input>
       <el-scrollbar wrap-class="right-scrollbar-wrapper">
         <div class="result-wrap">
-          <div class="search-item" v-for="(item, index) in options" :key="item.path" :style="activeStyle(index)" @mouseenter="activeIndex = index" @mouseleave="activeIndex = -1">
+          <div v-for="(item, index) in options" :key="item.path" :style="activeStyle(index)" class="search-item"
+               @mouseenter="activeIndex = index" @mouseleave="activeIndex = -1">
             <div class="left">
-              <svg-icon class="menu-icon" :icon-class="item.icon" />
+              <svg-icon :icon-class="item.icon" class="menu-icon"/>
             </div>
             <div class="search-info" @click="change(item)">
               <div class="menu-title">
@@ -35,9 +36,9 @@
                 {{ item.path }}
               </div>
             </div>
-            <svg-icon icon-class="enter" v-show="index === activeIndex"/>
+            <svg-icon v-show="index === activeIndex" icon-class="enter"/>
           </div>
-       </div>
+        </div>
       </el-scrollbar>
     </el-dialog>
   </div>
@@ -46,7 +47,7 @@
 <script>
 import Fuse from 'fuse.js/dist/fuse.min.js'
 import path from 'path'
-import { isHttp } from '@/utils/validate'
+import {isHttp} from '@/utils/validate'
 
 export default {
   name: 'HeaderSearch',
@@ -97,13 +98,13 @@ export default {
     change(val) {
       const path = val.path
       const query = val.query
-      if(isHttp(val.path)) {
+      if (isHttp(val.path)) {
         // http(s):// 路径新窗口打开
         const pindex = path.indexOf("http")
         window.open(path.substr(pindex, path.length), "_blank")
       } else {
         if (query) {
-          this.$router.push({ path: path, query: JSON.parse(query) })
+          this.$router.push({path: path, query: JSON.parse(query)})
         } else {
           this.$router.push(path)
         }
@@ -137,7 +138,9 @@ export default {
 
       for (const router of routes) {
         // skip hidden router
-        if (router.hidden) { continue }
+        if (router.hidden) {
+          continue
+        }
 
         const data = {
           path: !isHttp(router.path) ? path.resolve(basePath, router.path) : router.path,
@@ -249,6 +252,7 @@ export default {
       .menu-path {
         height: 20px;
       }
+
       .menu-path {
         color: #ccc;
         font-size: 10px;
