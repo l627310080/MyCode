@@ -51,6 +51,12 @@ public class CilsPlatformMapping extends BaseEntity {
     @Excel(name = "平台同步状态：1-已同步，0-需重新推送")
     private Long syncStatus;
 
+    /**
+     * 目标国家 (US, UK, JP)
+     */
+    @Excel(name = "目标国家")
+    private String targetCountry;
+
     public Long getId() {
         return id;
     }
@@ -99,6 +105,14 @@ public class CilsPlatformMapping extends BaseEntity {
         this.syncStatus = syncStatus;
     }
 
+    public String getTargetCountry() {
+        return targetCountry;
+    }
+
+    public void setTargetCountry(String targetCountry) {
+        this.targetCountry = targetCountry;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
@@ -108,6 +122,7 @@ public class CilsPlatformMapping extends BaseEntity {
                 .append("platformSku", getPlatformSku())
                 .append("salePriceUsd", getSalePriceUsd())
                 .append("syncStatus", getSyncStatus())
+                .append("targetCountry", getTargetCountry())
                 .append("createTime", getCreateTime())
                 .toString();
     }

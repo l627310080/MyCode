@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.john.cils.mapper.CilsRuleConfigMapper">
+
+    <resultMap type="CilsRuleConfig" id="CilsRuleConfigResult">
+        <result property="ruleId"    column="rule_id"    />
+        <result property="ruleName"    column="rule_name"    />
+        <result property="targetObject"    column="target_object"    />
+        <result property="targetField"    column="target_field"    />
+        <result property="aiPrompt"    column="ai_prompt"    />
+        <result property="errorMessage"    column="error_message"    />
+        <result property="isActive"    column="is_active"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectCilsRuleConfigVo">
+        select rule_id, rule_name, target_object, target_field, ai_prompt, error_message, is_active, create_by, create_time, update_by, update_time from cils_rule_config
+    </sql>
+
+    <select id="selectCilsRuleConfigList" parameterType="CilsRuleConfig" resultMap="CilsRuleConfigResult">
+        <include refid="selectCilsRuleConfigVo"/>
+        <where>
+            <if test="ruleName != null  and ruleName != ''"> and rule_name like concat('%', #{ruleName}, '%')</if>
+            <if test="targetObject != null  and targetObject != ''"> and target_object = #{targetObject}</if>
+            <if test="isActive != null "> and is_active = #{isActive}</if>
+        </where>
+    </select>
+
+    <select id="selectCilsRuleConfigById" parameterType="Long" resultMap="CilsRuleConfigResult">
+        <include refid="selectCilsRuleConfigVo"/>
+        where rule_id = #{ruleId}
+    </select>
+
+    <select id="selectRulesByTarget" resultMap="CilsRuleConfigResult">
+        <include refid="selectCilsRuleConfigVo"/>
+        where is_active = 1 and target_object = #{targetObject}
+    </select>
+
+    <insert id="insertCilsRuleConfig" parameterType="CilsRuleConfig" useGeneratedKeys="true" keyProperty="ruleId">
+        insert into cils_rule_config
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="ruleName != null and ruleName != ''">rule_name,</if>
+            <if test="targetObject != null and targetObject != ''">target_object,</if>
+            <if test="targetField != null and targetField != ''">target_field,</if>
+            <if test="aiPrompt != null">ai_prompt,</if>
+            <if test="errorMessage != null">error_message,</if>
+            <if test="isActive != null">is_active,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="ruleName != null and ruleName != ''">#{ruleName},</if>
+            <if test="targetObject != null and targetObject != ''">#{targetObject},</if>
+            <if test="targetField != null and targetField != ''">#{targetField},</if>
+            <if test="aiPrompt != null">#{aiPrompt},</if>
+            <if test="errorMessage != null">#{errorMessage},</if>
+            <if test="isActive != null">#{isActive},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateCilsRuleConfig" parameterType="CilsRuleConfig">
+        update cils_rule_config
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="ruleName != null and ruleName != ''">rule_name = #{ruleName},</if>
+            <if test="targetObject != null and targetObject != ''">target_object = #{targetObject},</if>
+            <if test="targetField != null and targetField != ''">target_field = #{targetField},</if>
+            <if test="aiPrompt != null">ai_prompt = #{aiPrompt},</if>
+            <if test="errorMessage != null">error_message = #{errorMessage},</if>
+            <if test="isActive != null">is_active = #{isActive},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where rule_id = #{ruleId}
+    </update>
+
+    <delete id="deleteCilsRuleConfigById" parameterType="Long">
+        delete from cils_rule_config where rule_id = #{ruleId}
+    </delete>
+
+    <delete id="deleteCilsRuleConfigByIds" parameterType="String">
+        delete from cils_rule_config where rule_id in
+        <foreach item="ruleId" collection="array" open="(" separator="," close=")">
+            #{ruleId}
+        </foreach>
+    </delete>
+</mapper>

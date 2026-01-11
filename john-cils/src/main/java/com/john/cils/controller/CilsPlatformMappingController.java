@@ -2,6 +2,7 @@ package com.john.cils.controller;
 
 import com.john.cils.domain.CilsPlatformMapping;
 import com.john.cils.service.ICilsPlatformMappingService;
+import com.john.cils.service.PlatformPushService;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -26,6 +27,9 @@ import java.util.List;
 public class CilsPlatformMappingController extends BaseController {
     @Autowired
     private ICilsPlatformMappingService cilsPlatformMappingService;
+
+    @Autowired
+    private PlatformPushService platformPushService;
 
     /**
      * 查询跨平台商品映射列表
@@ -87,5 +91,16 @@ public class CilsPlatformMappingController extends BaseController {
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids) {
         return toAjax(cilsPlatformMappingService.deleteCilsPlatformMappingByIds(ids));
+    }
+
+    /**
+     * 手动触发推送
+     */
+    @PreAuthorize("@ss.hasPermi('system:mapping:edit')")
+    @Log(title = "跨平台商品映射", businessType = BusinessType.OTHER)
+    @PostMapping("/push/{id}")
+    public AjaxResult push(@PathVariable("id") Long id) {
+        platformPushService.pushProduct(id);
+        return success("推送任务已提交");
     }
 }

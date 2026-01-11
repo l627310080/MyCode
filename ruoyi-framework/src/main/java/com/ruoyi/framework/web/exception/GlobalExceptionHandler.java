@@ -5,6 +5,8 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.text.Convert;
 import com.ruoyi.common.exception.DemoModeException;
 import com.ruoyi.common.exception.ServiceException;
+import com.ruoyi.common.exception.user.CaptchaException;
+import com.ruoyi.common.exception.user.UserPasswordNotMatchException;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.html.EscapeUtil;
 import org.slf4j.Logger;
@@ -61,6 +63,14 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 用户密码不正确或验证码错误
+     */
+    @ExceptionHandler({UserPasswordNotMatchException.class, CaptchaException.class})
+    public AjaxResult handleUserPasswordNotMatchException(Exception e, HttpServletRequest request) {
+        return AjaxResult.error(e.getMessage());
+    }
+
+    /**
      * 请求路径中缺少必需的路径变量
      */
     @ExceptionHandler(MissingPathVariableException.class)
@@ -91,7 +101,7 @@ public class GlobalExceptionHandler {
     public AjaxResult handleRuntimeException(RuntimeException e, HttpServletRequest request) {
         String requestURI = request.getRequestURI();
         log.error("请求地址'{}',发生未知异常.", requestURI, e);
-        return AjaxResult.error(e.getMessage());
+        return AjaxResult.error("系统内部错误，请联系管理员");
     }
 
     /**
@@ -101,7 +111,7 @@ public class GlobalExceptionHandler {
     public AjaxResult handleException(Exception e, HttpServletRequest request) {
         String requestURI = request.getRequestURI();
         log.error("请求地址'{}',发生系统异常.", requestURI, e);
-        return AjaxResult.error(e.getMessage());
+        return AjaxResult.error("系统发生未知错误，请联系管理员");
     }
 
     /**

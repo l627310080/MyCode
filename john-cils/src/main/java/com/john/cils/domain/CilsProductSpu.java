@@ -1,5 +1,6 @@
 package com.john.cils.domain;
 
+import com.john.cils.verification.domain.Verifiable;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -11,7 +12,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
  * @author ruoyi
  * @date 2026-01-06
  */
-public class CilsProductSpu extends BaseEntity {
+public class CilsProductSpu extends BaseEntity implements Verifiable {
     private static final long serialVersionUID = 1L;
 
     /**
@@ -95,6 +96,19 @@ public class CilsProductSpu extends BaseEntity {
 
     public void setIsAudit(Integer isAudit) {
         this.isAudit = isAudit;
+    }
+
+    // --- Verifiable 接口实现 ---
+
+    @Override
+    public String getIdentity() {
+        return "SPU:" + spuCode;
+    }
+
+    @Override
+    public void updateAuditStatus(Integer status, String remark) {
+        this.isAudit = status;
+        this.setRemark(remark);
     }
 
     @Override

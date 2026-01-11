@@ -1,40 +1,32 @@
 <template>
   <div class="app-container">
-    <el-form v-show="showSearch" ref="queryForm" :inline="true" :model="queryParams" label-width="68px" size="small">
-      <el-form-item label="内部唯一SPU编码，用于仓库管理" prop="spuCode">
+    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="100px">
+      <el-form-item label="SPU编码" prop="spuCode">
         <el-input
           v-model="queryParams.spuCode"
+          placeholder="请输入SPU编码"
           clearable
-          placeholder="请输入内部唯一SPU编码，用于仓库管理"
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="商品标准标题，用于多语言翻译基础" prop="productName">
+      <el-form-item label="商品标题" prop="productName">
         <el-input
           v-model="queryParams.productName"
+          placeholder="请输入商品标题"
           clearable
-          placeholder="请输入商品标准标题，用于多语言翻译基础"
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="系统内部类目ID" prop="categoryId">
-        <el-input
-          v-model="queryParams.categoryId"
-          clearable
-          placeholder="请输入系统内部类目ID"
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="审核状态：0-待审核，1-审核通过，2-合规拦截" prop="isAudit">
+      <el-form-item label="审核状态" prop="isAudit">
         <el-input
           v-model="queryParams.isAudit"
+          placeholder="请输入审核状态"
           clearable
-          placeholder="请输入审核状态：0-待审核，1-审核通过，2-合规拦截"
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
       <el-form-item>
-        <el-button icon="el-icon-search" size="mini" type="primary" @click="handleQuery">搜索</el-button>
+        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
@@ -42,65 +34,61 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
-          v-hasPermi="['system:spu:add']"
-          icon="el-icon-plus"
-          plain
-          size="mini"
           type="primary"
+          plain
+          icon="el-icon-plus"
+          size="mini"
           @click="handleAdd"
-        >新增
-        </el-button>
+          v-hasPermi="['system:spu:add']"
+        >新增</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
-          v-hasPermi="['system:spu:edit']"
-          :disabled="single"
-          icon="el-icon-edit"
-          plain
-          size="mini"
           type="success"
+          plain
+          icon="el-icon-edit"
+          size="mini"
+          :disabled="single"
           @click="handleUpdate"
-        >修改
-        </el-button>
+          v-hasPermi="['system:spu:edit']"
+        >修改</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
-          v-hasPermi="['system:spu:remove']"
-          :disabled="multiple"
-          icon="el-icon-delete"
-          plain
-          size="mini"
           type="danger"
+          plain
+          icon="el-icon-delete"
+          size="mini"
+          :disabled="multiple"
           @click="handleDelete"
-        >删除
-        </el-button>
+          v-hasPermi="['system:spu:remove']"
+        >删除</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
-          v-hasPermi="['system:spu:export']"
-          icon="el-icon-download"
-          plain
-          size="mini"
           type="warning"
+          plain
+          icon="el-icon-download"
+          size="mini"
           @click="handleExport"
-        >导出
-        </el-button>
+          v-hasPermi="['system:spu:export']"
+        >导出</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <el-table v-loading="loading" :data="spuList" @selection-change="handleSelectionChange">
-      <el-table-column align="center" type="selection" width="55"/>
-      <el-table-column align="center" label="主键ID" prop="id"/>
-      <el-table-column align="center" label="内部唯一SPU编码，用于仓库管理" prop="spuCode"/>
-      <el-table-column align="center" label="商品标准标题，用于多语言翻译基础" prop="productName"/>
-      <el-table-column align="center" label="系统内部类目ID" prop="categoryId"/>
-      <el-table-column align="center" label="商品展示主图网络地址" prop="mainImage" width="100">
+      <el-table-column type="selection" width="55" align="center" />
+      <el-table-column label="主键ID" align="center" prop="id" width="80" />
+      <el-table-column label="SPU编码" align="center" prop="spuCode" width="150" />
+      <el-table-column label="商品标题" align="center" prop="productName" min-width="200" :show-overflow-tooltip="true" />
+      <el-table-column label="类目ID" align="center" prop="categoryId" width="100" />
+      <el-table-column label="主图" align="center" prop="mainImage" width="100">
         <template slot-scope="scope">
-          <image-preview :height="50" :src="scope.row.mainImage" :width="50"/>
+          <image-preview :src="scope.row.mainImage" :width="50" :height="50"/>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="审核状态" prop="isAudit">
+      <el-table-column label="审核状态" align="center" prop="isAudit" width="100">
         <template slot-scope="scope">
           <el-tag v-if="scope.row.isAudit === 0" type="info">待审核</el-tag>
           <el-tag v-else-if="scope.row.isAudit === 1" type="success">审核通过</el-tag>
@@ -108,54 +96,49 @@
           <span v-else>{{ scope.row.isAudit }}</span>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="业务备注说明" prop="remark"/>
-      <el-table-column align="center" class-name="small-padding fixed-width" label="操作">
+      <el-table-column label="备注" align="center" prop="remark" min-width="150" :show-overflow-tooltip="true" />
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="120">
         <template slot-scope="scope">
           <el-button
-            v-hasPermi="['system:spu:edit']"
+            size="mini"
+            type="text"
             icon="el-icon-edit"
-            size="mini"
-            type="text"
             @click="handleUpdate(scope.row)"
-          >修改
-          </el-button>
+            v-hasPermi="['system:spu:edit']"
+          >修改</el-button>
           <el-button
-            v-hasPermi="['system:spu:remove']"
-            icon="el-icon-delete"
             size="mini"
             type="text"
+            icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-          >删除
-          </el-button>
+            v-hasPermi="['system:spu:remove']"
+          >删除</el-button>
         </template>
       </el-table-column>
     </el-table>
 
     <pagination
       v-show="total>0"
-      :limit.sync="queryParams.pageSize"
-      :page.sync="queryParams.pageNum"
       :total="total"
+      :page.sync="queryParams.pageNum"
+      :limit.sync="queryParams.pageSize"
       @pagination="getList"
     />
 
     <!-- 添加或修改跨境商品标准信息(SPU)对话框 -->
-    <el-dialog :title="title" :visible.sync="open" append-to-body width="500px">
+    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="内部唯一SPU编码，用于仓库管理" prop="spuCode">
-          <el-input v-model="form.spuCode" placeholder="请输入内部唯一SPU编码，用于仓库管理"/>
+        <el-form-item label="商品类目" prop="categoryId">
+          <treeselect v-model="form.categoryId" :options="categoryOptions" :normalizer="normalizer" placeholder="请选择商品类目" />
         </el-form-item>
-        <el-form-item label="商品标准标题，用于多语言翻译基础" prop="productName">
-          <el-input v-model="form.productName" placeholder="请输入商品标准标题，用于多语言翻译基础"/>
+        <el-form-item label="商品标题" prop="productName">
+          <el-input v-model="form.productName" placeholder="请输入商品标题" />
         </el-form-item>
-        <el-form-item label="系统内部类目ID" prop="categoryId">
-          <el-input v-model="form.categoryId" placeholder="请输入系统内部类目ID"/>
-        </el-form-item>
-        <el-form-item label="商品展示主图网络地址" prop="mainImage">
+        <el-form-item label="主图" prop="mainImage">
           <image-upload v-model="form.mainImage"/>
         </el-form-item>
-        <el-form-item label="业务备注说明" prop="remark">
-          <el-input v-model="form.remark" placeholder="请输入内容" type="textarea"/>
+        <el-form-item label="备注" prop="remark">
+          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -167,10 +150,14 @@
 </template>
 
 <script>
-import {addSpu, delSpu, getSpu, listSpu, updateSpu} from "@/api/system/spu"
+import { listSpu, getSpu, delSpu, addSpu, updateSpu } from "@/api/system/spu"
+import { treeselect } from "@/api/system/category";
+import Treeselect from "@riophae/vue-treeselect";
+import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 
 export default {
   name: "Spu",
+  components: { Treeselect },
   data() {
     return {
       // 遮罩层
@@ -185,8 +172,10 @@ export default {
       showSearch: true,
       // 总条数
       total: 0,
-      // 跨境商品标准信息(SPU)表格数据
+      // SPU表格数据
       spuList: [],
+      // 类目树选项
+      categoryOptions: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -197,19 +186,17 @@ export default {
         pageSize: 10,
         spuCode: null,
         productName: null,
-        categoryId: null,
-        mainImage: null,
         isAudit: null,
       },
       // 表单参数
       form: {},
       // 表单校验
       rules: {
-        spuCode: [
-          {required: true, message: "内部唯一SPU编码，用于仓库管理不能为空", trigger: "blur"}
+        categoryId: [
+          { required: true, message: "商品类目不能为空", trigger: "change" }
         ],
         productName: [
-          {required: true, message: "商品标准标题，用于多语言翻译基础不能为空", trigger: "blur"}
+          { required: true, message: "商品标题不能为空", trigger: "blur" }
         ],
       }
     }
@@ -218,15 +205,30 @@ export default {
     this.getList()
   },
   methods: {
-    /** 查询跨境商品标准信息(SPU)列表 */
+    /** 查询SPU列表 */
     getList() {
-      // 注意：这里不设置 this.loading = true，实现静默刷新
-      // 只有第一次加载时 loading 默认为 true
       listSpu(this.queryParams).then(response => {
         this.spuList = response.rows
         this.total = response.total
         this.loading = false
       })
+    },
+    /** 查询类目下拉树结构 */
+    getTreeselect() {
+      treeselect().then(response => {
+        this.categoryOptions = response.data;
+      });
+    },
+    /** 转换类目数据结构 */
+    normalizer(node) {
+      if (node.children && !node.children.length) {
+        delete node.children;
+      }
+      return {
+        id: node.id,
+        label: node.label,
+        children: node.children
+      };
     },
     // 取消按钮
     cancel() {
@@ -242,9 +244,6 @@ export default {
         categoryId: null,
         mainImage: null,
         isAudit: null,
-        createBy: null,
-        createTime: null,
-        updateTime: null,
         remark: null
       }
       this.resetForm("form")
@@ -252,7 +251,7 @@ export default {
     /** 搜索按钮操作 */
     handleQuery() {
       this.queryParams.pageNum = 1
-      this.loading = true // 手动搜索时显示 loading
+      this.loading = true
       this.getList()
     },
     /** 重置按钮操作 */
@@ -263,23 +262,25 @@ export default {
     // 多选框选中数据
     handleSelectionChange(selection) {
       this.ids = selection.map(item => item.id)
-      this.single = selection.length !== 1
+      this.single = selection.length!==1
       this.multiple = !selection.length
     },
     /** 新增按钮操作 */
     handleAdd() {
       this.reset()
+      this.getTreeselect();
       this.open = true
-      this.title = "添加跨境商品标准信息(SPU)"
+      this.title = "添加商品SPU"
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset()
+      this.getTreeselect();
       const id = row.id || this.ids
       getSpu(id).then(response => {
         this.form = response.data
         this.open = true
-        this.title = "修改跨境商品标准信息(SPU)"
+        this.title = "修改商品SPU"
       })
     },
     /** 提交按钮 */
@@ -298,14 +299,11 @@ export default {
               this.$modal.msgSuccess("新增成功")
               this.open = false
               this.loading = true
-              this.getList() // 立即刷新一次
-
-              // 轮询机制：每隔 1.5 秒刷新一次，共刷新 4 次
-              // 这样可以覆盖 6 秒内的异步处理时间
+              this.getList()
               let count = 0;
               const interval = setInterval(() => {
                 count++;
-                this.getList(); // 静默刷新
+                this.getList();
                 if (count >= 4) {
                   clearInterval(interval);
                 }
@@ -318,14 +316,13 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       const ids = row.id || this.ids
-      this.$modal.confirm('是否确认删除跨境商品标准信息(SPU)编号为"' + ids + '"的数据项？').then(function () {
+      this.$modal.confirm('是否确认删除SPU编号为"' + ids + '"的数据项？').then(function() {
         return delSpu(ids)
       }).then(() => {
         this.loading = true
         this.getList()
         this.$modal.msgSuccess("删除成功")
-      }).catch(() => {
-      })
+      }).catch(() => {})
     },
     /** 导出按钮操作 */
     handleExport() {

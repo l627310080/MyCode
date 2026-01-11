@@ -1,11 +1,15 @@
 package com.john.cils.verification.async;
 
 import com.john.cils.common.constant.CilsConstants;
+import com.john.cils.domain.CilsProductSku;
 import com.john.cils.domain.CilsProductSpu;
-import com.john.cils.domain.CilsPythonRule;
+import com.john.cils.domain.CilsRuleConfig;
+import com.john.cils.mapper.CilsProductSkuMapper;
 import com.john.cils.mapper.CilsProductSpuMapper;
-import com.john.cils.mapper.CilsPythonRuleMapper;
-import com.john.cils.verification.context.VerificationContext;
+import com.john.cils.mapper.CilsRuleConfigMapper;
+import com.john.cils.verification.domain.Verifiable;
+import com.john.cils.verification.domain.VerificationResult;
+import com.john.cils.verification.engine.VerificationEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,16 +20,9 @@ import java.util.List;
 
 /**
  * 异步合规校验服务
- * <p>
- * 该服务负责协调校验流程，包括：
- * 1. 获取适用的校验规则
- * 2. 遍历规则执行校验
- * 3. 更新最终状态
- * <p>
- * 使用 @Async 注解确保整个流程在独立线程中执行，不阻塞主业务。
  *
  * @author john
- * @date 2026-01-06
+ * @date 2026-01-09
  */
 @Service
 public class AsyncVerificationService {
@@ -33,63 +30,38 @@ public class AsyncVerificationService {
     private static final Logger log = LoggerFactory.getLogger(AsyncVerificationService.class);
 
     @Autowired
-    private VerificationContext verificationContext;
+    private VerificationEngine verificationEngine;
 
     @Autowired
-    private CilsPythonRuleMapper ruleMapper;
+    private CilsRuleConfigMapper ruleConfigMapper;
 
     @Autowired
     private CilsProductSpuMapper spuMapper;
 
-    /**
-     * 触发异步校验任务
-     *
-     * @param spu 待校验的商品ID
-     */
+    @Autowired
+    private CilsProductSkuMapper skuMapper;
+
     @Async
-    public void triggerVerification(CilsProductSpu spu) {
-        log.info(">>> 异步校验任务开始，SPU ID: {}", spu.getId());
+    public void triggerVerification(Verifiable target) {
+        log.info(">>> 异步校验任务开始，对象: {}", target.getIdentity());
 
         try {
-            // 1. 获取适用的校验规则
-            // 逻辑：查询所有全局规则 + 当前商品所属类目的特定规则
-            // 这里正确调用了 selectRulesForSpu 方法
-            List<CilsPythonRule> rules = ruleMapper.selectRulesForSpu(spu.getCategoryId());
+            String targetObject = (target instanceof CilsProductSpu) ? "SPU" : "SKU";
+            List<CilsRuleConfig> rules = ruleConfigMapper.selectRulesByTarget(targetObject);
 
             if (rules.isEmpty()) {
                 log.info("没有适用的校验规则，默认通过");
-                updateAuditStatus(spu, CilsConstants.AUDIT_STATUS_PASS, "无校验规则，自动通过");
+                updateStatus(target, CilsConstants.AUDIT_STATUS_PASS, "无校验规则，自动通过");
                 return;
             }
 
-            // 2. 遍历规则执行校验
-            boolean allPass = true;
-            String failReason = "";
+            // 批量执行校验
+            VerificationResult result = verificationEngine.executeBatch(target, rules);
 
-            for (CilsPythonRule rule : rules) {
-                try {
-                    // 委托 Context 执行策略
-                    boolean pass = verificationContext.executeStrategy(spu, rule);
+            int finalStatus = result.isSuccess() ? CilsConstants.AUDIT_STATUS_PASS : CilsConstants.AUDIT_STATUS_BLOCK;
+            String remark = result.isSuccess() ? "校验通过" : result.getMessage();
 
-                    if (!pass) {
-                        log.warn("规则校验未通过: {}, 规则名: {}", spu.getSpuCode(), rule.getRuleName());
-                        allPass = false;
-                        failReason = "规则拦截: " + rule.getRuleName();
-                        break; // 快速失败机制
-                    }
-                } catch (Exception e) {
-                    log.error("规则执行异常: " + rule.getRuleName(), e);
-                    allPass = false;
-                    failReason = "系统异常: " + rule.getRuleName();
-                    break;
-                }
-            }
-
-            // 3. 更新最终状态
-            int finalStatus = allPass ? CilsConstants.AUDIT_STATUS_PASS : CilsConstants.AUDIT_STATUS_BLOCK;
-            String remark = allPass ? "校验通过" : failReason;
-
-            updateAuditStatus(spu, finalStatus, remark);
+            updateStatus(target, finalStatus, remark);
 
             log.info("<<< 异步校验任务结束，最终状态: {}", finalStatus);
 
@@ -98,12 +70,13 @@ public class AsyncVerificationService {
         }
     }
 
-    /**
-     * 更新商品审核状态及备注
-     */
-    private void updateAuditStatus(CilsProductSpu spu, int status, String remark) {
-        spu.setIsAudit(status);
-        spu.setRemark(remark);
-        spuMapper.updateCilsProductSpu(spu);
+    private void updateStatus(Verifiable target, int status, String remark) {
+        target.updateAuditStatus(status, remark);
+
+        if (target instanceof CilsProductSpu) {
+            spuMapper.updateCilsProductSpu((CilsProductSpu) target);
+        } else if (target instanceof CilsProductSku) {
+            skuMapper.updateCilsProductSku((CilsProductSku) target);
+        }
     }
 }

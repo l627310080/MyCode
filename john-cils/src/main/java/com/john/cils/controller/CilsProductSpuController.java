@@ -1,52 +1,78 @@
 package com.john.cils.controller;
 
-import com.john.cils.domain.CilsProductSpu;
-import com.john.cils.service.ICilsProductSpuService;
+import java.math.BigDecimal;
+import java.util.List;
+import javax.servlet.http.HttpServletResponse;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
-import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.StringUtils;
+import com.john.cils.domain.CilsProductSpu;
+import com.john.cils.service.ExchangeRateService;
+import com.john.cils.service.ICilsProductSpuService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.HttpServletResponse;
-import java.util.List;
+import com.ruoyi.common.core.page.TableDataInfo;
 
 /**
  * 跨境商品标准信息表(SPU)Controller
- * <p>
- * 作用：
- * 接收前端的 HTTP 请求，调用 Service 层处理业务，并返回 JSON 结果。
- * 它是后端的“门户”。
- *
+ * 
  * @author john
  * @date 2024-05-20
  */
-@RestController // 标识这是一个 RESTful 风格的控制器，返回 JSON 数据
-@RequestMapping("/system/spu") // 定义该控制器的基础 URL 路径
+@RestController 
+@RequestMapping("/system/spu") 
 public class CilsProductSpuController extends BaseController {
     @Autowired
     private ICilsProductSpuService cilsProductSpuService;
+    
+    @Autowired
+    private ExchangeRateService exchangeRateService;
 
     /**
      * 查询跨境商品标准信息表(SPU)列表
      */
-    @PreAuthorize("@ss.hasPermi('system:spu:list')") // 权限控制：只有拥有 'system:spu:list' 权限的用户才能访问
+    @PreAuthorize("@ss.hasPermi('system:spu:list')") 
     @GetMapping("/list")
     public TableDataInfo list(CilsProductSpu cilsProductSpu) {
-        startPage(); // 开启分页
+        startPage(); 
         List<CilsProductSpu> list = cilsProductSpuService.selectCilsProductSpuList(cilsProductSpu);
-        return getDataTable(list); // 封装分页结果返回
+        return getDataTable(list); 
+    }
+
+    /**
+     * 获取SPU选项列表 (用于下拉搜索)
+     */
+    @GetMapping("/optionList")
+    public AjaxResult optionList(CilsProductSpu cilsProductSpu) {
+        List<CilsProductSpu> list = cilsProductSpuService.selectCilsProductSpuList(cilsProductSpu);
+        return success(list);
+    }
+    
+    /**
+     * 获取指定货币的汇率
+     */
+    @GetMapping("/rate/{currency}")
+    public AjaxResult getRate(@PathVariable("currency") String currency) {
+        BigDecimal rate = exchangeRateService.getRate(currency);
+        return success(rate);
     }
 
     /**
      * 导出跨境商品标准信息表(SPU)列表
      */
     @PreAuthorize("@ss.hasPermi('system:spu:export')")
-    @Log(title = "跨境商品标准信息表(SPU)", businessType = BusinessType.EXPORT) // 记录操作日志
+    @Log(title = "跨境商品标准信息表(SPU)", businessType = BusinessType.EXPORT) 
     @PostMapping("/export")
     public void export(HttpServletResponse response, CilsProductSpu cilsProductSpu) {
         List<CilsProductSpu> list = cilsProductSpuService.selectCilsProductSpuList(cilsProductSpu);
@@ -70,7 +96,14 @@ public class CilsProductSpuController extends BaseController {
     @Log(title = "跨境商品标准信息表(SPU)", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody CilsProductSpu cilsProductSpu) {
-        // 调用 Service 的 insert 方法，这里会触发异步校验逻辑
+        // 强制校验：必须包含标题和主图
+        if (StringUtils.isEmpty(cilsProductSpu.getProductName())) {
+            return error("商品标题不能为空");
+        }
+        if (StringUtils.isEmpty(cilsProductSpu.getMainImage())) {
+            return error("商品主图不能为空");
+        }
+        
         return toAjax(cilsProductSpuService.insertCilsProductSpu(cilsProductSpu));
     }
 
@@ -81,6 +114,13 @@ public class CilsProductSpuController extends BaseController {
     @Log(title = "跨境商品标准信息表(SPU)", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody CilsProductSpu cilsProductSpu) {
+        // 修改时也要校验
+        if (StringUtils.isEmpty(cilsProductSpu.getProductName())) {
+            return error("商品标题不能为空");
+        }
+        if (StringUtils.isEmpty(cilsProductSpu.getMainImage())) {
+            return error("商品主图不能为空");
+        }
         return toAjax(cilsProductSpuService.updateCilsProductSpu(cilsProductSpu));
     }
 
@@ -89,7 +129,7 @@ public class CilsProductSpuController extends BaseController {
      */
     @PreAuthorize("@ss.hasPermi('system:spu:remove')")
     @Log(title = "跨境商品标准信息表(SPU)", businessType = BusinessType.DELETE)
-    @DeleteMapping("/{ids}")
+	@DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids) {
         return toAjax(cilsProductSpuService.deleteCilsProductSpuByIds(ids));
     }
