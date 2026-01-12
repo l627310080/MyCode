@@ -129,7 +129,14 @@
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="商品类目" prop="categoryId">
-          <treeselect v-model="form.categoryId" :options="categoryOptions" :normalizer="normalizer" placeholder="请选择商品类目" />
+          <treeselect
+            v-model="form.categoryId"
+            :options="categoryOptions"
+            :normalizer="normalizer"
+            :disable-branch-nodes="true"
+            :show-count="true"
+            placeholder="请选择商品类目"
+          />
         </el-form-item>
         <el-form-item label="商品标题" prop="productName">
           <el-input v-model="form.productName" placeholder="请输入商品标题" />
@@ -151,7 +158,7 @@
 
 <script>
 import { listSpu, getSpu, delSpu, addSpu, updateSpu } from "@/api/system/spu"
-import { treeselect } from "@/api/system/category";
+import { listCategory } from "@/api/system/category"; // 关键修改：改用 listCategory
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 
@@ -215,8 +222,9 @@ export default {
     },
     /** 查询类目下拉树结构 */
     getTreeselect() {
-      treeselect().then(response => {
-        this.categoryOptions = response.data;
+      // 关键修改：使用 listCategory + handleTree，复刻 Category 页面的逻辑
+      listCategory().then(response => {
+        this.categoryOptions = this.handleTree(response.data, "categoryId");
       });
     },
     /** 转换类目数据结构 */
@@ -225,8 +233,8 @@ export default {
         delete node.children;
       }
       return {
-        id: node.id,
-        label: node.label,
+        id: node.categoryId,
+        label: node.categoryName,
         children: node.children
       };
     },
@@ -275,13 +283,17 @@ export default {
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset()
-      this.getTreeselect();
-      const id = row.id || this.ids
-      getSpu(id).then(response => {
-        this.form = response.data
-        this.open = true
-        this.title = "修改商品SPU"
-      })
+      // 保证时序：先加载树，再加载详情
+      listCategory().then(response => {
+        this.categoryOptions = this.handleTree(response.data, "categoryId");
+
+        const id = row.id || this.ids
+        getSpu(id).then(response => {
+          this.form = response.data
+          this.open = true
+          this.title = "修改商品SPU"
+        })
+      });
     },
     /** 提交按钮 */
     submitForm() {

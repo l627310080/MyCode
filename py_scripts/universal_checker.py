@@ -2,46 +2,39 @@ import sys
 import json
 import base64
 import requests
+import os
+from google import genai
+from google.genai import types
 
-# 配置你的 Gemini API Key
-API_KEY = "YOUR_API_KEY"
-TEXT_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={API_KEY}"
-VISION_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key={API_KEY}"
+# 从环境变量获取 API Key
+client = genai.Client()
 
 def call_gemini_text(prompt):
-    headers = {'Content-Type': 'application/json'}
-    data = { "contents": [{ "parts": [{"text": prompt}] }] }
     try:
-        response = requests.post(TEXT_API_URL, headers=headers, json=data, timeout=10)
-        if response.status_code == 200:
-            result = response.json()
-            try:
-                return result['candidates'][0]['content']['parts'][0]['text']
-            except:
-                return "API解析失败"
-        return f"API调用失败: {response.status_code}"
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+        return response.text
     except Exception as e:
         return f"API请求异常: {str(e)}"
 
 def call_gemini_vision(image_data_base64, prompt):
-    headers = {'Content-Type': 'application/json'}
-    data = {
-        "contents": [{
-            "parts": [
-                {"text": prompt},
-                { "inline_data": { "mime_type": "image/jpeg", "data": image_data_base64 } }
-            ]
-        }]
-    }
     try:
-        response = requests.post(VISION_API_URL, headers=headers, json=data, timeout=30)
-        if response.status_code == 200:
-            result = response.json()
-            try:
-                return result['candidates'][0]['content']['parts'][0]['text']
-            except:
-                return "API解析失败"
-        return f"API调用失败: {response.status_code}"
+        image_bytes = base64.b64decode(image_data_base64)
+
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[
+                types.Content(
+                    parts=[
+                        types.Part.from_text(text=prompt),
+                        types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")
+                    ]
+                )
+            ]
+        )
+        return response.text
     except Exception as e:
         return f"API请求异常: {str(e)}"
 
@@ -49,6 +42,7 @@ def download_image_as_base64(url):
     try:
         if url.startswith("/"):
             url = "http://localhost:8080" + url
+        url = url.strip()
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
             return base64.b64encode(response.content).decode('utf-8')
@@ -56,24 +50,45 @@ def download_image_as_base64(url):
     except:
         return None
 
-def check_image_ai(image_url, prompt_template):
-    if not image_url: return True, ""
-    print(f"正在下载图片: {image_url} ...")
-    base64_data = download_image_as_base64(image_url)
-    if not base64_data: return True, "图片下载失败，跳过检查"
+def check_image_ai(image_url_str, prompt_template, product_name):
+    if not image_url_str: return True, ""
 
-    prompt = f"""
-    {prompt_template}
+    image_urls = image_url_str.split(',')
 
-    如果图片合规，请只回复 "PASS"。
-    如果有任何违规，请回复 "BLOCK:原因"。
-    """
-    result = call_gemini_vision(base64_data, prompt)
-    print(f"AI回复: {result}")
+    for image_url in image_urls:
+        if not image_url.strip(): continue
 
-    if "PASS" in result: return True, ""
-    elif "BLOCK" in result: return False, result.replace("BLOCK:", "").strip()
-    else: return True, f"AI回复异常: {result}"
+        print(f"正在下载图片: {image_url} ...")
+        base64_data = download_image_as_base64(image_url)
+
+        if not base64_data:
+            print(f"图片下载失败: {image_url}，跳过")
+            continue
+
+        # 升级 Prompt：加入图文一致性检查
+        prompt = f"""
+        你是一个严格的跨境电商合规审核员。
+        商品标题是："{product_name}"。
+
+        请检查这张图片：
+        1. 是否包含武器、毒品、色情、暴力等违禁内容？
+        2. **图片内容是否与商品标题一致？** (例如：标题是"显示器"，图片却是代码截图、风景或无关物体，视为违规)
+        3. {prompt_template}
+
+        如果图片合规且与标题一致，请只回复 "PASS"。
+        如果有任何违规或不一致，请回复 "BLOCK:原因"。
+        """
+
+        print(f"开始请AI判断图片是否合法 (标题: {product_name}): {image_url}")
+        result = call_gemini_vision(base64_data, prompt)
+        print(f"AI回复: {result}")
+
+        if "BLOCK" in result:
+            return False, result.replace("BLOCK:", "").strip()
+        elif "PASS" not in result:
+            print(f"AI回复异常: {result}")
+
+    return True, ""
 
 def check_text_ai(text, prompt_template):
     if not text: return True, ""
@@ -86,6 +101,8 @@ def check_text_ai(text, prompt_template):
     如果合规，请只回复 "PASS"。
     如果不合规，请回复 "BLOCK:原因"。
     """
+
+    print(f"开始请AI判断文本是否合法: {text[:20]}...")
     result = call_gemini_text(prompt)
     print(f"AI回复: {result}")
 
@@ -107,17 +124,17 @@ def main():
             field = rule.get('field')
             content = rule.get('content')
             error_msg = rule.get('errorMsg', '校验失败')
-            rule_type = rule.get('type', 'TEXT') # 获取 Java 传来的类型
+            rule_type = rule.get('type', 'TEXT')
+            product_name = rule.get('productName', '未知商品') # 获取商品标题
 
             value = product.get(field)
 
             print(f"执行规则: {rule.get('name')}, 类型: {rule_type}, 字段: {field}")
 
-            is_pass = True
-            reason = ""
 
             if rule_type == 'IMAGE':
-                is_pass, reason = check_image_ai(str(value), content)
+                # 传入商品标题
+                is_pass, reason = check_image_ai(str(value), content, product_name)
             else:
                 is_pass, reason = check_text_ai(str(value), content)
 

@@ -88,7 +88,12 @@
         <el-row>
           <el-col :span="24">
             <el-form-item label="上级类目" prop="parentId">
-              <treeselect v-model="form.parentId" :options="categoryOptions" :normalizer="normalizer" placeholder="选择上级类目" />
+              <treeselect
+                v-model="form.parentId"
+                :options="categoryOptions"
+                :normalizer="normalizer"
+                placeholder="选择上级类目"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="24">
@@ -120,7 +125,7 @@
 </template>
 
 <script>
-import { listCategory, getCategory, delCategory, addCategory, updateCategory } from "@/api/system/category";
+import { listCategory, getCategory, delCategory, addCategory, updateCategory, treeselect } from "@/api/system/category";
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 
@@ -143,9 +148,6 @@ export default {
       title: "",
       form: {},
       rules: {
-        parentId: [
-          { required: true, message: "上级类目不能为空", trigger: "blur" }
-        ],
         categoryName: [
           { required: true, message: "类目名称不能为空", trigger: "blur" }
         ],
@@ -183,7 +185,7 @@ export default {
     reset() {
       this.form = {
         categoryId: undefined,
-        parentId: 0,
+        parentId: undefined,
         categoryName: undefined,
         orderNum: 0,
         status: "0"
@@ -202,27 +204,26 @@ export default {
       if (row != null && row.categoryId) {
         this.form.parentId = row.categoryId;
       } else {
-        this.form.parentId = 0;
+        this.form.parentId = undefined;
       }
       this.open = true;
       this.title = "添加商品类目";
+      // 移除手动添加根节点
       listCategory().then(response => {
-        this.categoryOptions = [];
-        const category = { categoryId: 0, categoryName: '主类目', children: [] };
-        category.children = this.handleTree(response.data, "categoryId");
-        this.categoryOptions.push(category);
+        this.categoryOptions = this.handleTree(response.data, "categoryId");
       });
     },
     handleUpdate(row) {
       this.reset();
+      // 移除手动添加根节点
       listCategory().then(response => {
-        this.categoryOptions = [];
-        const category = { categoryId: 0, categoryName: '主类目', children: [] };
-        category.children = this.handleTree(response.data, "categoryId");
-        this.categoryOptions.push(category);
+        this.categoryOptions = this.handleTree(response.data, "categoryId");
 
         getCategory(row.categoryId).then(response => {
           this.form = response.data;
+          if (this.form.parentId === 0) {
+            this.form.parentId = undefined;
+          }
           this.open = true;
           this.title = "修改商品类目";
         });
@@ -231,6 +232,9 @@ export default {
     submitForm: function() {
       this.$refs["form"].validate(valid => {
         if (valid) {
+          if (!this.form.parentId) {
+            this.form.parentId = 0;
+          }
           if (this.form.categoryId != undefined) {
             updateCategory(this.form).then(response => {
               this.$modal.msgSuccess("修改成功");

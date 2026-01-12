@@ -1,52 +1,42 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
-        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.john.cils.mapper.CilsProductSpuMapper">
 
     <resultMap type="CilsProductSpu" id="CilsProductSpuResult">
-        <result property="id" column="id"/>
-        <result property="spuCode" column="spu_code"/>
-        <result property="productName" column="product_name"/>
-        <result property="categoryId" column="category_id"/>
-        <result property="mainImage" column="main_image"/>
-        <result property="isAudit" column="is_audit"/>
-        <result property="createBy" column="create_by"/>
-        <result property="createTime" column="create_time"/>
-        <result property="updateTime" column="update_time"/>
-        <result property="remark" column="remark"/>
+        <result property="id"    column="id"    />
+        <result property="spuCode"    column="spu_code"    />
+        <result property="productName"    column="product_name"    />
+        <result property="categoryId"    column="category_id"    />
+        <result property="categoryName"    column="category_name"    />
+        <result property="mainImage"    column="main_image"    />
+        <result property="isAudit"    column="is_audit"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
     </resultMap>
 
     <sql id="selectCilsProductSpuVo">
-        select id,
-               spu_code,
-               product_name,
-               category_id,
-               main_image,
-               is_audit,
-               create_by,
-               create_time,
-               update_time,
-               remark
-        from cils_product_spu
+        select s.id, s.spu_code, s.product_name, s.category_id, c.category_name, s.main_image, s.is_audit, s.create_by, s.create_time, s.update_time, s.remark
+        from cils_product_spu s
+        left join cils_category c on s.category_id = c.category_id
     </sql>
 
     <select id="selectCilsProductSpuList" parameterType="CilsProductSpu" resultMap="CilsProductSpuResult">
         <include refid="selectCilsProductSpuVo"/>
         <where>
-            <if test="spuCode != null  and spuCode != ''">and spu_code = #{spuCode}</if>
-            <if test="productName != null  and productName != ''">and product_name like concat('%', #{productName},
-                '%')
-            </if>
-            <if test="categoryId != null ">and category_id = #{categoryId}</if>
-            <if test="mainImage != null  and mainImage != ''">and main_image = #{mainImage}</if>
-            <if test="isAudit != null ">and is_audit = #{isAudit}</if>
+            <if test="spuCode != null  and spuCode != ''"> and s.spu_code = #{spuCode}</if>
+            <if test="productName != null  and productName != ''"> and s.product_name like concat('%', #{productName}, '%')</if>
+            <if test="categoryId != null "> and s.category_id = #{categoryId}</if>
+            <if test="isAudit != null "> and s.is_audit = #{isAudit}</if>
         </where>
     </select>
 
     <select id="selectCilsProductSpuById" parameterType="Long" resultMap="CilsProductSpuResult">
         <include refid="selectCilsProductSpuVo"/>
-        where id = #{id}
+        where s.id = #{id}
     </select>
 
     <insert id="insertCilsProductSpu" parameterType="CilsProductSpu" useGeneratedKeys="true" keyProperty="id">
@@ -92,9 +82,7 @@
     </update>
 
     <delete id="deleteCilsProductSpuById" parameterType="Long">
-        delete
-        from cils_product_spu
-        where id = #{id}
+        delete from cils_product_spu where id = #{id}
     </delete>
 
     <delete id="deleteCilsProductSpuByIds" parameterType="String">

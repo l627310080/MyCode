@@ -15,95 +15,57 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 public class CilsProductSpu extends BaseEntity implements Verifiable {
     private static final long serialVersionUID = 1L;
 
-    /**
-     * 主键ID
-     */
+    /** 主键ID */
     private Long id;
 
-    /**
-     * 内部唯一SPU编码，用于仓库管理
-     */
-    @Excel(name = "内部唯一SPU编码，用于仓库管理")
+    /** SPU编码 */
+    @Excel(name = "SPU编码")
     private String spuCode;
 
-    /**
-     * 商品标准标题，用于多语言翻译基础
-     */
-    @Excel(name = "商品标准标题，用于多语言翻译基础")
+    /** 商品标题 */
+    @Excel(name = "商品标题")
     private String productName;
 
-    /**
-     * 系统内部类目ID
-     */
-    @Excel(name = "系统内部类目ID")
+    /** 类目ID */
+    @Excel(name = "类目ID")
     private Long categoryId;
 
-    /**
-     * 商品展示主图网络地址
-     */
-    @Excel(name = "商品展示主图网络地址")
+    /** 类目名称 (非数据库字段，仅用于展示) */
+    @Excel(name = "类目名称")
+    private String categoryName;
+
+    /** 主图 */
+    @Excel(name = "主图")
     private String mainImage;
 
-    /**
-     * 审核状态：0-待审核，1-审核通过，2-合规拦截
-     */
-    @Excel(name = "审核状态：0-待审核，1-审核通过，2-合规拦截")
+    /** 审核状态 */
+    @Excel(name = "审核状态")
     private Integer isAudit;
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getSpuCode() { return spuCode; }
+    public void setSpuCode(String spuCode) { this.spuCode = spuCode; }
 
-    public String getSpuCode() {
-        return spuCode;
-    }
+    public String getProductName() { return productName; }
+    public void setProductName(String productName) { this.productName = productName; }
 
-    public void setSpuCode(String spuCode) {
-        this.spuCode = spuCode;
-    }
+    public Long getCategoryId() { return categoryId; }
+    public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
 
-    public String getProductName() {
-        return productName;
-    }
+    public String getCategoryName() { return categoryName; }
+    public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
 
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
+    public String getMainImage() { return mainImage; }
+    public void setMainImage(String mainImage) { this.mainImage = mainImage; }
 
-    public Long getCategoryId() {
-        return categoryId;
-    }
-
-    public void setCategoryId(Long categoryId) {
-        this.categoryId = categoryId;
-    }
-
-    public String getMainImage() {
-        return mainImage;
-    }
-
-    public void setMainImage(String mainImage) {
-        this.mainImage = mainImage;
-    }
-
-    public Integer getIsAudit() {
-        return isAudit;
-    }
-
-    public void setIsAudit(Integer isAudit) {
-        this.isAudit = isAudit;
-    }
+    public Integer getIsAudit() { return isAudit; }
+    public void setIsAudit(Integer isAudit) { this.isAudit = isAudit; }
 
     // --- Verifiable 接口实现 ---
-
     @Override
-    public String getIdentity() {
-        return "SPU:" + spuCode;
-    }
+    public String getIdentity() { return "SPU:" + spuCode; }
 
     @Override
     public void updateAuditStatus(Integer status, String remark) {
@@ -118,12 +80,9 @@ public class CilsProductSpu extends BaseEntity implements Verifiable {
                 .append("spuCode", getSpuCode())
                 .append("productName", getProductName())
                 .append("categoryId", getCategoryId())
+                .append("categoryName", getCategoryName())
                 .append("mainImage", getMainImage())
                 .append("isAudit", getIsAudit())
-                .append("createBy", getCreateBy())
-                .append("createTime", getCreateTime())
-                .append("updateTime", getUpdateTime())
-                .append("remark", getRemark())
                 .toString();
     }
 }

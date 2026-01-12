@@ -1,6 +1,7 @@
 package com.john.cils.verification.engine;
 
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import com.john.cils.domain.CilsRuleConfig;
 import com.john.cils.utils.python.PythonRunnerUtils;
 import com.john.cils.verification.domain.Verifiable;
@@ -32,6 +33,15 @@ public class VerificationEngine {
         Map<String, Object> context = new HashMap<>();
         context.put("productData", data);
         
+        // 获取商品标题，作为上下文传给 AI
+        String productName = "";
+        try {
+            JSONObject dataJson = JSONObject.parseObject(JSON.toJSONString(data));
+            productName = dataJson.getString("productName");
+        } catch (Exception e) {
+            // 忽略
+        }
+        
         List<Map<String, String>> ruleList = new ArrayList<>();
         for (CilsRuleConfig rule : rules) {
             Map<String, String> ruleMap = new HashMap<>();
@@ -39,6 +49,8 @@ public class VerificationEngine {
             ruleMap.put("field", rule.getTargetField());
             ruleMap.put("content", rule.getAiPrompt());
             ruleMap.put("errorMsg", rule.getErrorMessage());
+            // 传递商品标题作为上下文
+            ruleMap.put("productName", productName);
             
             // 自动判断类型
             String field = rule.getTargetField().toLowerCase();
