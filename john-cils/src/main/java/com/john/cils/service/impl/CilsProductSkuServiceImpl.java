@@ -1,6 +1,7 @@
 package com.john.cils.service.impl;
 
 import com.alibaba.fastjson2.JSONObject;
+import com.john.cils.common.constant.CilsConstants;
 import com.john.cils.domain.CilsPlatformMapping;
 import com.john.cils.domain.CilsProductSku;
 import com.john.cils.domain.dto.TargetMarketDTO;
@@ -12,6 +13,7 @@ import com.john.cils.service.PlatformPushService;
 import com.john.cils.verification.async.AsyncVerificationService;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +58,6 @@ public class CilsProductSkuServiceImpl implements ICilsProductSkuService {
     @Autowired
     private ExchangeRateService exchangeRateService;
 
-    // 直接读取配置文件，解耦 ruoyi-system
     @Value("${cils.price.multiplier:1.5}")
     private String defaultMultiplier;
 
@@ -104,7 +105,15 @@ public class CilsProductSkuServiceImpl implements ICilsProductSkuService {
     @Override
     @Transactional 
     public int insertCilsProductSku(CilsProductSku cilsProductSku) {
+        // 自动生成 SKU 编码
+        if (StringUtils.isEmpty(cilsProductSku.getSkuCode())) {
+            String code = "SKU-" + cilsProductSku.getSpuId() + "-" + System.currentTimeMillis() % 1000000;
+            cilsProductSku.setSkuCode(code);
+        }
+
         cilsProductSku.setCreateTime(DateUtils.getNowDate());
+        cilsProductSku.setIsAudit(CilsConstants.AUDIT_STATUS_WAITING); // 默认待审核
+
         int rows = cilsProductSkuMapper.insertCilsProductSku(cilsProductSku);
         
         if (rows > 0) {
@@ -119,9 +128,6 @@ public class CilsProductSkuServiceImpl implements ICilsProductSkuService {
         return rows;
     }
 
-    /**
-     * 自动创建平台映射并推送
-     */
     private void autoCreateMappings(CilsProductSku sku) {
         List<TargetMarketDTO> markets = sku.getTargetMarkets();
         if (markets == null || markets.isEmpty()) {
@@ -134,10 +140,7 @@ public class CilsProductSkuServiceImpl implements ICilsProductSkuService {
             mapping.setPlatformType(market.getPlatform());
             mapping.setTargetCountry(market.getCountry());
             mapping.setPlatformSku(sku.getSkuCode()); 
-            
-            // 直接使用前端传来的最终售价 (前端已经算好了)
             mapping.setSalePriceUsd(market.getPrice());
-            
             mapping.setSyncStatus(0L); 
 
             mappingService.insertCilsPlatformMapping(mapping);

@@ -135,7 +135,7 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改商品单品规格(SKU)对话框 -->
+    <!-- 添加或修改商品SKU对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-row>
@@ -148,7 +148,8 @@
                 reserve-keyword
                 placeholder="请输入SPU名称搜索"
                 :remote-method="remoteMethod"
-                :loading="searchLoading">
+                :loading="searchLoading"
+                @change="handleSpuChange">
                 <el-option
                   v-for="item in spuOptions"
                   :key="item.id"
@@ -160,12 +161,12 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="SKU编码" prop="skuCode">
-              <el-input v-model="form.skuCode" placeholder="请输入SKU编码" />
+              <el-input v-model="form.skuCode" placeholder="填写"规格描述"后自动生成" readonly />
             </el-form-item>
           </el-col>
           <el-col :span="24">
             <el-form-item label="规格描述" prop="specInfo">
-              <el-input v-model="form.specInfo" type="textarea" placeholder="请输入内容" />
+              <el-input v-model="form.specInfo" type="textarea" placeholder="例如: 红色, XL" @input="generateSkuCode" />
             </el-form-item>
           </el-col>
           <el-col :span="24">
@@ -175,17 +176,21 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="采购价" prop="purchasePrice">
-              <el-input v-model="form.purchasePrice" placeholder="请输入采购价" @input="calculatePrices" />
+              <el-input
+                v-model="form.purchasePrice"
+                placeholder="请输入采购价"
+                @input="handlePurchasePriceInput"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="库存" prop="stockQty">
-              <el-input v-model="form.stockQty" placeholder="请输入库存" />
+              <el-input v-model.number="form.stockQty" placeholder="请输入库存" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="重量(kg)" prop="weightKg">
-              <el-input v-model="form.weightKg" placeholder="请输入重量" />
+              <el-input v-model.number="form.weightKg" placeholder="请输入重量" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -194,8 +199,8 @@
         <div v-if="!form.id">
           <el-divider content-position="left">一键铺货 (自动创建映射)</el-divider>
           <el-button type="primary" icon="el-icon-plus" size="mini" @click="addTargetMarket" style="margin-bottom: 10px;">添加发布目标</el-button>
-          <el-table :data="form.targetMarkets" border style="width: 100%">
-            <el-table-column label="平台" width="150">
+          <el-table :data="form.targetMarkets" border style="width: 100%" :key="tableKey">
+            <el-table-column label="平台" width="120">
               <template slot-scope="scope">
                 <el-select v-model="scope.row.platform" placeholder="选择平台">
                   <el-option label="Amazon" value="AMAZON" />
@@ -205,7 +210,11 @@
             </el-table-column>
             <el-table-column label="国家" width="150">
               <template slot-scope="scope">
-                <el-select v-model="scope.row.country" placeholder="选择国家" @change="handleCountryChange(scope.row)">
+                <el-select
+                  v-model="scope.row.country"
+                  placeholder="选择国家"
+                  @change="handleCountryChange(scope.$index, scope.row.country)"
+                >
                   <el-option label="美国 (US)" value="US" />
                   <el-option label="英国 (UK)" value="UK" />
                   <el-option label="泰国 (TH)" value="TH" />
@@ -214,7 +223,11 @@
             </el-table-column>
             <el-table-column label="定价模式" width="150">
               <template slot-scope="scope">
-                <el-select v-model="scope.row.priceMode" placeholder="模式" @change="calculateRowPrice(scope.row)">
+                <el-select
+                  v-model="scope.row.priceMode"
+                  placeholder="模式"
+                  @change="handlePriceModeChange(scope.$index, scope.row.priceMode)"
+                >
                   <el-option label="固定价格" value="FIXED" />
                   <el-option label="倍数定价" value="MULTIPLIER" />
                 </el-select>
@@ -222,15 +235,21 @@
             </el-table-column>
             <el-table-column label="数值 (价/倍)" width="150">
               <template slot-scope="scope">
-                <el-input v-model="scope.row.inputValue" placeholder="价格或倍数" @input="calculateRowPrice(scope.row)" />
+                <el-input
+                  v-model="scope.row.inputValue"
+                  placeholder="价格或倍数"
+                  @input="handleInputValueChange(scope.$index, scope.row.inputValue)"
+                />
               </template>
             </el-table-column>
-            <el-table-column label="最终售价 (USD)" width="150">
+            <el-table-column label="最终售价" width="200">
               <template slot-scope="scope">
-                <el-input v-model="scope.row.price" placeholder="自动计算" :disabled="scope.row.priceMode === 'MULTIPLIER'" />
+                <span style="color: #E6A23C; font-weight: bold;">
+                  {{ scope.row.currency }} {{ formatPrice(scope.row.price) }}
+                </span>
               </template>
             </el-table-column>
-            <el-table-column label="操作" align="center">
+            <el-table-column label="操作" align="center" width="100">
               <template slot-scope="scope">
                 <el-button type="text" icon="el-icon-delete" @click="removeTargetMarket(scope.$index)">移除</el-button>
               </template>
@@ -266,6 +285,7 @@ export default {
       searchLoading: false,
       title: "",
       open: false,
+      tableKey: 0, // 用于强制刷新表格
       queryParams: {
         pageNum: 1,
         pageSize: 10,
@@ -282,12 +302,14 @@ export default {
         spuId: [
           { required: true, message: "所属SPU不能为空", trigger: "change" }
         ],
-        skuCode: [
-          { required: true, message: "SKU编码不能为空", trigger: "blur" }
-        ],
       },
-      // 汇率缓存
-      rates: {}
+      rates: {},
+      countryCurrency: {
+        'US': 'USD',
+        'UK': 'GBP',
+        'TH': 'THB'
+      },
+      selectedSpu: null
     }
   },
   created() {
@@ -303,15 +325,11 @@ export default {
       })
     },
     remoteMethod(query) {
-      if (query !== '') {
-        this.searchLoading = true;
-        listSpu({ productName: query, pageNum: 1, pageSize: 20 }).then(response => {
-          this.searchLoading = false;
-          this.spuOptions = response.rows;
-        });
-      } else {
-        this.spuOptions = [];
-      }
+      this.searchLoading = true;
+      listSpu({ productName: query, isAudit: 1, pageNum: 1, pageSize: 20 }).then(response => {
+        this.searchLoading = false;
+        this.spuOptions = response.rows;
+      });
     },
     cancel() {
       this.open = false
@@ -331,6 +349,8 @@ export default {
         targetMarkets: []
       }
       this.resetForm("form")
+      this.selectedSpu = null;
+      this.tableKey = 0;
     },
     handleQuery() {
       this.queryParams.pageNum = 1
@@ -349,9 +369,11 @@ export default {
       this.reset()
       this.open = true
       this.title = "添加商品SKU"
-      this.spuOptions = [];
-      // 预加载汇率
+      this.remoteMethod('');
+      // 预加载常用货币的汇率
       this.getRate('USD');
+      this.getRate('GBP');
+      this.getRate('THB');
     },
     handleUpdate(row) {
       this.reset()
@@ -395,50 +417,258 @@ export default {
         ...this.queryParams
       }, `sku_${new Date().getTime()}.xlsx`)
     },
-    // 获取汇率
+
+    /**
+     * 获取指定币种的汇率
+     */
     getRate(currency) {
-      if (this.rates[currency]) return; // 已有缓存
-      request({
+      if (this.rates[currency]) return Promise.resolve(this.rates[currency]);
+      return request({
         url: '/system/spu/rate/' + currency,
         method: 'get'
       }).then(response => {
         this.$set(this.rates, currency, response.data);
+        console.log(`✅ 成功获取${currency}汇率:`, response.data);
+        return response.data;
+      }).catch(error => {
+        console.error(`❌ 获取${currency}汇率失败:`, error);
+        // 设置默认汇率为1，避免计算出错
+        this.$set(this.rates, currency, 1);
+        return 1;
       });
     },
-    addTargetMarket() {
-      this.form.targetMarkets.push({
+
+    /**
+     * 添加目标市场
+     */
+    async addTargetMarket() {
+      const newMarket = {
         platform: 'AMAZON',
         country: 'US',
         priceMode: 'MULTIPLIER',
         inputValue: 1.5,
-        price: 0
+        price: 0,
+        currency: 'USD'
+      };
+
+      if (!this.form.targetMarkets) {
+        this.$set(this.form, 'targetMarkets', []);
+      }
+
+      // 先获取汇率
+      await this.getRate(newMarket.currency);
+
+      // 添加新市场
+      this.form.targetMarkets.push(newMarket);
+
+      // 计算价格
+      this.$nextTick(() => {
+        this.calculateMarketPrice(this.form.targetMarkets.length - 1);
       });
-      // 确保汇率已加载
-      this.getRate('USD');
     },
+
+    /**
+     * 删除目标市场
+     */
     removeTargetMarket(index) {
       this.form.targetMarkets.splice(index, 1);
+      this.forceTableUpdate();
     },
-    handleCountryChange(row) {
-      // 切换国家时，重新获取汇率 (这里简化为只支持 USD，实际应根据国家映射货币)
-      this.getRate('USD');
-      this.calculateRowPrice(row);
+
+    /**
+     * 处理采购价输入
+     */
+    handlePurchasePriceInput(val) {
+      const price = val === '' ? null : parseFloat(val);
+      this.$set(this.form, 'purchasePrice', price);
+      console.log('📝 采购价输入:', price);
+
+      // 延迟一下再计算，确保数据已更新
+      this.$nextTick(() => {
+        this.calculateAllMarketPrices();
+      });
     },
-    calculateRowPrice(row) {
-      if (row.priceMode === 'FIXED') {
-        row.price = row.inputValue;
+
+    /**
+     * 处理数值（价/倍）输入
+     */
+    handleInputValueChange(index, val) {
+      if (!this.form.targetMarkets[index]) return;
+
+      const inputValue = val === '' ? 0 : parseFloat(val);
+
+      // 创建新对象，更新 inputValue
+      const updatedMarket = {
+        ...this.form.targetMarkets[index],
+        inputValue: inputValue
+      };
+
+      // 替换整个对象
+      this.$set(this.form.targetMarkets, index, updatedMarket);
+
+      console.log(`📝 市场${index}数值输入:`, inputValue);
+
+      // 立即重新计算该市场价格
+      this.$nextTick(() => {
+        this.calculateMarketPrice(index);
+      });
+    },
+
+    /**
+     * 国家变更：更新币种并重新计算价格
+     */
+    async handleCountryChange(index, country) {
+      if (!this.form.targetMarkets[index]) return;
+
+      console.log(`🌍 市场${index}国家变更为:`, country);
+
+      const market = this.form.targetMarkets[index];
+      const newCurrency = this.countryCurrency[country] || 'USD';
+
+      // 创建新对象，更新国家和币种
+      const updatedMarket = {
+        ...market,
+        country: country,
+        currency: newCurrency
+      };
+
+      // 替换整个对象
+      this.$set(this.form.targetMarkets, index, updatedMarket);
+
+      // 获取新币种的汇率
+      await this.getRate(newCurrency);
+
+      // 重新计算价格
+      this.$nextTick(() => {
+        this.calculateMarketPrice(index);
+      });
+    },
+
+    /**
+     * 定价模式变更：重新计算价格
+     */
+    handlePriceModeChange(index, mode) {
+      if (!this.form.targetMarkets[index]) return;
+
+      console.log(`💰 市场${index}定价模式变更为:`, mode);
+
+      // 创建新对象，更新定价模式
+      const updatedMarket = {
+        ...this.form.targetMarkets[index],
+        priceMode: mode
+      };
+
+      // 替换整个对象
+      this.$set(this.form.targetMarkets, index, updatedMarket);
+
+      // 立即重新计算价格
+      this.$nextTick(() => {
+        this.calculateMarketPrice(index);
+      });
+    },
+
+    /**
+     * 计算单个市场的最终售价
+     * @param {number} index - targetMarkets 的索引
+     */
+    calculateMarketPrice(index) {
+      if (!this.form.targetMarkets || index < 0 || index >= this.form.targetMarkets.length) {
+        console.warn('⚠️ 无效的市场索引:', index);
+        return;
+      }
+
+      const market = this.form.targetMarkets[index];
+      const purchasePrice = this.form.purchasePrice;
+      const rate = this.rates[market.currency] || 1;
+      const inputValue = market.inputValue || 0;
+
+      console.log(`🧮 计算市场${index}价格:`, {
+        country: market.country,
+        currency: market.currency,
+        priceMode: market.priceMode,
+        inputValue: inputValue,
+        purchasePrice: purchasePrice,
+        rate: rate
+      });
+
+      let newPrice = 0;
+
+      if (market.priceMode === 'FIXED') {
+        // 固定价格模式：直接使用输入值
+        newPrice = inputValue;
+        console.log(`  ➜ 固定价格模式: ${inputValue}`);
       } else {
-        if (!this.form.purchasePrice) return;
-        const rate = this.rates['USD'] || 1; // 默认 1
-        const multiplier = row.inputValue || 1;
-        row.price = (this.form.purchasePrice * rate * multiplier).toFixed(2);
+        // 倍数定价模式：采购价 × 汇率 × 倍数
+        if (!purchasePrice || purchasePrice <= 0) {
+          newPrice = 0;
+          console.log(`  ➜ 采购价无效，价格为0`);
+        } else {
+          newPrice = parseFloat((purchasePrice * rate * inputValue).toFixed(2));
+          console.log(`  ➜ 倍数定价: ${purchasePrice} × ${rate} × ${inputValue} = ${newPrice}`);
+        }
+      }
+
+      // 创建新对象替换整个市场对象，确保响应式更新
+      const updatedMarket = {
+        ...market,
+        price: newPrice
+      };
+
+      // 使用 $set 替换整个对象
+      this.$set(this.form.targetMarkets, index, updatedMarket);
+
+      console.log(`✅ 市场${index}最终价格: ${updatedMarket.currency} ${newPrice}`);
+
+      // 强制刷新表格
+      this.forceTableUpdate();
+    },
+
+    /**
+     * 采购价改变时，计算所有市场的价格
+     */
+    calculateAllMarketPrices() {
+      if (!this.form.targetMarkets || !this.form.targetMarkets.length) {
+        console.log('⚠️ 没有目标市场需要计算');
+        return;
+      }
+
+      console.log('🔄 重新计算所有市场价格，采购价:', this.form.purchasePrice);
+
+      for (let i = 0; i < this.form.targetMarkets.length; i++) {
+        this.calculateMarketPrice(i);
       }
     },
-    calculatePrices() {
-      if (this.form.targetMarkets) {
-        this.form.targetMarkets.forEach(item => {
-          this.calculateRowPrice(item);
-        });
+
+    /**
+     * 强制更新表格
+     */
+    forceTableUpdate() {
+      this.tableKey++;
+    },
+
+    /**
+     * 格式化价格显示
+     */
+    formatPrice(price) {
+      if (!price && price !== 0) return '0.00';
+      return parseFloat(price).toFixed(2);
+    },
+
+    /**
+     * SPU变更：更新选中的SPU对象，用于生成SKU编码
+     */
+    handleSpuChange(spuId) {
+      this.selectedSpu = this.spuOptions.find(item => item.id === spuId);
+      this.generateSkuCode();
+    },
+
+    /**
+     * 生成SKU编码
+     */
+    generateSkuCode() {
+      if (this.selectedSpu && this.form.specInfo) {
+        const spec = this.form.specInfo.replace(/[,，\s]/g, '-');
+        this.form.skuCode = `${this.selectedSpu.spuCode}-${spec}`;
       }
     }
   }

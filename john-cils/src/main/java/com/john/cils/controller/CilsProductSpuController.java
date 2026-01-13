@@ -18,6 +18,8 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.common.utils.SecurityUtils; // 引入 SecurityUtils
+import com.john.cils.common.constant.CilsConstants;
 import com.john.cils.domain.CilsProductSpu;
 import com.john.cils.service.ExchangeRateService;
 import com.john.cils.service.ICilsProductSpuService;
@@ -52,9 +54,11 @@ public class CilsProductSpuController extends BaseController {
 
     /**
      * 获取SPU选项列表 (用于下拉搜索)
+     * 只返回审核通过的 SPU
      */
     @GetMapping("/optionList")
     public AjaxResult optionList(CilsProductSpu cilsProductSpu) {
+        cilsProductSpu.setIsAudit(CilsConstants.AUDIT_STATUS_PASS);
         List<CilsProductSpu> list = cilsProductSpuService.selectCilsProductSpuList(cilsProductSpu);
         return success(list);
     }
@@ -96,13 +100,15 @@ public class CilsProductSpuController extends BaseController {
     @Log(title = "跨境商品标准信息表(SPU)", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody CilsProductSpu cilsProductSpu) {
-        // 强制校验：必须包含标题和主图
         if (StringUtils.isEmpty(cilsProductSpu.getProductName())) {
             return error("商品标题不能为空");
         }
         if (StringUtils.isEmpty(cilsProductSpu.getMainImage())) {
             return error("商品主图不能为空");
         }
+        
+        // 关键修改：强制设置创建者为当前登录用户
+        cilsProductSpu.setCreateBy(SecurityUtils.getUsername());
         
         return toAjax(cilsProductSpuService.insertCilsProductSpu(cilsProductSpu));
     }
@@ -114,13 +120,16 @@ public class CilsProductSpuController extends BaseController {
     @Log(title = "跨境商品标准信息表(SPU)", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody CilsProductSpu cilsProductSpu) {
-        // 修改时也要校验
         if (StringUtils.isEmpty(cilsProductSpu.getProductName())) {
             return error("商品标题不能为空");
         }
         if (StringUtils.isEmpty(cilsProductSpu.getMainImage())) {
             return error("商品主图不能为空");
         }
+        
+        // 关键修改：强制设置更新者
+        cilsProductSpu.setUpdateBy(SecurityUtils.getUsername());
+
         return toAjax(cilsProductSpuService.updateCilsProductSpu(cilsProductSpu));
     }
 
