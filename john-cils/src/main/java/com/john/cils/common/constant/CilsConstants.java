@@ -56,4 +56,14 @@ public class CilsConstants {
      * 脚本输出协议：拦截
      */
     public static final String SCRIPT_OUT_BLOCK = "BLOCK";
+    
+    /**
+     * 定价模式：固定价格
+     */
+    public static final String PRICE_MODE_FIXED = "FIXED";
+    
+    /**
+     * 定价模式：倍数定价
+     */
+    public static final String PRICE_MODE_MULTIPLIER = "MULTIPLIER";
 }

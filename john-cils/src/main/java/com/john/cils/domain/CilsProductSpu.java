@@ -1,5 +1,6 @@
 package com.john.cils.domain;
 
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.john.cils.verification.domain.Verifiable;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
@@ -42,6 +43,10 @@ public class CilsProductSpu extends BaseEntity implements Verifiable {
     @Excel(name = "审核状态")
     private Integer isAudit;
 
+    /** 逻辑删除标志 (0代表存在 2代表删除) */
+    @TableLogic
+    private String delFlag;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -62,6 +67,9 @@ public class CilsProductSpu extends BaseEntity implements Verifiable {
 
     public Integer getIsAudit() { return isAudit; }
     public void setIsAudit(Integer isAudit) { this.isAudit = isAudit; }
+
+    public String getDelFlag() { return delFlag; }
+    public void setDelFlag(String delFlag) { this.delFlag = delFlag; }
 
     // --- Verifiable 接口实现 ---
     @Override

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import javax.imageio.ImageIO;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -41,7 +42,7 @@ public class CaptchaController {
     private ISysConfigService configService;
 
     /**
-     * 生成验证码
+     * 生成验证码 (返回 JSON)
      */
     @GetMapping("/captchaImage")
     public AjaxResult getCode(HttpServletResponse response) throws IOException {
@@ -83,5 +84,32 @@ public class CaptchaController {
         ajax.put("uuid", uuid);
         ajax.put("img", Base64.encode(os.toByteArray()));
         return ajax;
+    }
+
+    /**
+     * 直接获取验证码图片流 (测试专用)
+     * <p>
+     * 注意：此接口不会返回 uuid，请在调用 /captchaImage 接口时获取 uuid。
+     * 或者，为了方便测试，可以固定 uuid。
+     */
+    @GetMapping("/captchaImageStream")
+    public void getCaptchaImageStream(HttpServletResponse response) throws IOException {
+        boolean captchaEnabled = configService.selectCaptchaEnabled();
+        if (!captchaEnabled) {
+            return;
+        }
+
+        // 生成验证码
+        String capStr = captchaProducer.createText();
+        BufferedImage image = captchaProducer.createImage(capStr);
+        
+        // 设置响应头
+        response.setContentType("image/jpeg");
+        
+        // 将图片写入响应流
+        try (ServletOutputStream out = response.getOutputStream()) {
+            ImageIO.write(image, "jpg", out);
+            out.flush();
+        }
     }
 }

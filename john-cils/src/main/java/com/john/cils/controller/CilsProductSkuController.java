@@ -76,7 +76,10 @@ public class CilsProductSkuController extends BaseController {
     public AjaxResult add(@RequestBody CilsProductSku cilsProductSku) {
         // 强制设置创建者
         cilsProductSku.setCreateBy(SecurityUtils.getUsername());
-        return toAjax(cilsProductSkuService.insertCilsProductSku(cilsProductSku));
+        // 调用 service 方法，该方法会通过 mybatis 的 useGeneratedKeys 将 id 回填到 cilsProductSku 对象中
+        cilsProductSkuService.insertCilsProductSku(cilsProductSku);
+        // 将包含新ID的完整对象返回给前端，用于轮询
+        return AjaxResult.success(cilsProductSku);
     }
 
     /**

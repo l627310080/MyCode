@@ -13,7 +13,10 @@
         <result property="purchasePrice" column="purchase_price"/>
         <result property="stockQty" column="stock_qty"/>
         <result property="weightKg" column="weight_kg"/>
+        <result property="isAudit" column="is_audit"/>
+        <result property="remark" column="remark"/>
         <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
     </resultMap>
 
     <sql id="selectCilsProductSkuVo">
@@ -25,7 +28,10 @@
                purchase_price,
                stock_qty,
                weight_kg,
-               create_time
+               is_audit,
+               remark,
+               create_time,
+               update_time
         from cils_product_sku
     </sql>
 
@@ -34,12 +40,13 @@
         <where>
             <if test="spuId != null ">and spu_id = #{spuId}</if>
             <if test="skuCode != null  and skuCode != ''">and sku_code = #{skuCode}</if>
+            and del_flag = '0'
         </where>
     </select>
 
     <select id="selectCilsProductSkuById" parameterType="Long" resultMap="CilsProductSkuResult">
         <include refid="selectCilsProductSkuVo"/>
-        where id = #{id}
+        where id = #{id} and del_flag = '0'
     </select>
 
     <insert id="insertCilsProductSku" parameterType="CilsProductSku" useGeneratedKeys="true" keyProperty="id">
@@ -52,7 +59,10 @@
             <if test="purchasePrice != null">purchase_price,</if>
             <if test="stockQty != null">stock_qty,</if>
             <if test="weightKg != null">weight_kg,</if>
+            <if test="isAudit != null">is_audit,</if>
+            <if test="remark != null">remark,</if>
             <if test="createTime != null">create_time,</if>
+            <if test="createBy != null">create_by,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="spuId != null">#{spuId},</if>
@@ -62,7 +72,10 @@
             <if test="purchasePrice != null">#{purchasePrice},</if>
             <if test="stockQty != null">#{stockQty},</if>
             <if test="weightKg != null">#{weightKg},</if>
+            <if test="isAudit != null">#{isAudit},</if>
+            <if test="remark != null">#{remark},</if>
             <if test="createTime != null">#{createTime},</if>
+            <if test="createBy != null">#{createBy},</if>
         </trim>
     </insert>
 
@@ -76,21 +89,22 @@
             <if test="purchasePrice != null">purchase_price = #{purchasePrice},</if>
             <if test="stockQty != null">stock_qty = #{stockQty},</if>
             <if test="weightKg != null">weight_kg = #{weightKg},</if>
-            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="isAudit != null">is_audit = #{isAudit},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
         </trim>
         where id = #{id}
     </update>
 
-    <delete id="deleteCilsProductSkuById" parameterType="Long">
-        delete
-        from cils_product_sku
-        where id = #{id}
-    </delete>
+    <update id="deleteCilsProductSkuById" parameterType="Long">
+        update cils_product_sku set del_flag = '2', update_time = sysdate() where id = #{id}
+    </update>
 
-    <delete id="deleteCilsProductSkuByIds" parameterType="String">
-        delete from cils_product_sku where id in
+    <update id="deleteCilsProductSkuByIds" parameterType="String">
+        update cils_product_sku set del_flag = '2', update_time = sysdate() where id in
         <foreach item="id" collection="array" open="(" separator="," close=")">
             #{id}
         </foreach>
-    </delete>
+    </update>
 </mapper>

@@ -21,6 +21,8 @@ public class AmazonPushStrategy implements IPushStrategy {
 
     @Override
     public boolean push(CilsPlatformMapping mapping) {
-        return AmazonPushUtils.pushProduct(mapping.getPlatformSku(), mapping.getSalePriceUsd().doubleValue());
+        // 修正：使用 getSalePrice() 替代已废弃的 getSalePriceUsd()
+        // 将 BigDecimal 转换为 double 传递给工具类
+        return AmazonPushUtils.pushProduct(mapping.getPlatformSku(), mapping.getSalePrice().doubleValue());
     }
 }

@@ -6,7 +6,6 @@ import os
 from google import genai
 from google.genai import types
 
-# 从环境变量获取 API Key
 client = genai.Client()
 
 def call_gemini_text(prompt):
@@ -50,7 +49,7 @@ def download_image_as_base64(url):
     except:
         return None
 
-def check_image_ai(image_url_str, prompt_template, product_name):
+def check_image_ai(image_url_str, prompt_template, product_name, category_name):
     if not image_url_str: return True, ""
     
     image_urls = image_url_str.split(',')
@@ -66,20 +65,23 @@ def check_image_ai(image_url_str, prompt_template, product_name):
             print(f"图片下载失败: {image_url}，跳过")
             continue
 
+        # 升级 Prompt：加入类目校验
         prompt = f"""
         你是一个严格的跨境电商合规审核员。
         商品标题是："{product_name}"。
+        商品类目是："{category_name}"。
         
         请检查这张图片：
         1. 是否包含武器、毒品、色情、暴力等违禁内容？
-        2. **图片内容是否与商品标题一致？** (例如：标题是"显示器"，图片却是代码截图、风景或无关物体，视为违规)
+        2. **图片内容是否与商品标题及类目一致？** 
+           (例如：类目是"手机"，但图片是"衣服"，必须拦截)
         3. {prompt_template}
         
-        如果图片合规且与标题一致，请只回复 "PASS"。
+        如果图片合规且一致，请只回复 "PASS"。
         如果有任何违规或不一致，请回复 "BLOCK:原因"。
         """
         
-        print(f"开始请AI判断图片是否合法 (标题: {product_name}): {image_url}")
+        print(f"开始请AI判断图片是否合法 (标题: {product_name}, 类目: {category_name}): {image_url}")
         result = call_gemini_vision(base64_data, prompt)
         print(f"AI回复: {result}")
         
@@ -92,13 +94,16 @@ def check_image_ai(image_url_str, prompt_template, product_name):
         return False, "; ".join(reasons)
     return True, ""
 
-def check_text_ai(text, prompt_template):
+def check_text_ai(text, prompt_template, category_name):
     if not text: return True, ""
     
     prompt = f"""
     {prompt_template}
     
+    商品类目是："{category_name}"。
     待审核文本："{text}"
+    
+    请检查文本是否与类目一致？
     
     如果合规，请只回复 "PASS"。
     如果不合规，请回复 "BLOCK:原因"。
@@ -112,9 +117,20 @@ def check_text_ai(text, prompt_template):
         return False, result.replace("BLOCK:", "").strip()
     elif "PASS" not in result:
         print(f"AI回复异常: {result}")
-        return True, "" # 异常放行
+        return True, "" 
     
     return True, ""
+
+def get_value_smart(product, field, rule_type):
+    value = product.get(field)
+    if value: return value
+    
+    if rule_type == 'IMAGE':
+        return product.get('skuImage') or product.get('mainImage')
+    elif rule_type == 'TEXT':
+        return product.get('specInfo') or product.get('productName')
+    
+    return None
 
 def main():
     try:
@@ -133,9 +149,11 @@ def main():
             content = rule.get('content')
             error_msg = rule.get('errorMsg', '校验失败')
             rule_type = rule.get('type', 'TEXT') 
-            product_name = rule.get('productName', '未知商品')
             
-            value = product.get(field)
+            product_name = rule.get('productName') or product.get('productName') or product.get('specInfo') or '未知商品'
+            category_name = rule.get('categoryName') or '未知类目'
+            
+            value = get_value_smart(product, field, rule_type)
             
             print(f"执行规则: {rule.get('name')}, 类型: {rule_type}, 字段: {field}")
             
@@ -143,18 +161,16 @@ def main():
             reason = ""
             
             if rule_type == 'IMAGE':
-                is_pass, reason = check_image_ai(str(value), content, product_name)
+                is_pass, reason = check_image_ai(str(value), content, product_name, category_name)
             else:
-                is_pass, reason = check_text_ai(str(value), content)
+                is_pass, reason = check_text_ai(str(value), content, category_name)
             
             if not is_pass:
-                # 收集错误原因，而不是直接返回
                 full_reason = f"{error_msg}: {reason}"
                 all_fail_reasons.append(full_reason)
                 print(f"规则未通过: {full_reason}")
 
         if all_fail_reasons:
-            # 汇总所有错误
             final_reason = " | ".join(all_fail_reasons)
             print(f"FAIL_REASON:{final_reason}")
             print("BLOCK")

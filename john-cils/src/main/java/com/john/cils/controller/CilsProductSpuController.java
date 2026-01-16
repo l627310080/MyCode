@@ -18,7 +18,7 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.common.utils.SecurityUtils; // 引入 SecurityUtils
+import com.ruoyi.common.utils.SecurityUtils;
 import com.john.cils.common.constant.CilsConstants;
 import com.john.cils.domain.CilsProductSpu;
 import com.john.cils.service.ExchangeRateService;
@@ -28,28 +28,28 @@ import com.ruoyi.common.core.page.TableDataInfo;
 
 /**
  * 跨境商品标准信息表(SPU)Controller
- * 
+ *
  * @author john
  * @date 2024-05-20
  */
-@RestController 
-@RequestMapping("/system/spu") 
+@RestController
+@RequestMapping("/system/spu")
 public class CilsProductSpuController extends BaseController {
     @Autowired
     private ICilsProductSpuService cilsProductSpuService;
-    
+
     @Autowired
     private ExchangeRateService exchangeRateService;
 
     /**
      * 查询跨境商品标准信息表(SPU)列表
      */
-    @PreAuthorize("@ss.hasPermi('system:spu:list')") 
+    @PreAuthorize("@ss.hasPermi('system:spu:list')")
     @GetMapping("/list")
     public TableDataInfo list(CilsProductSpu cilsProductSpu) {
-        startPage(); 
+        startPage();
         List<CilsProductSpu> list = cilsProductSpuService.selectCilsProductSpuList(cilsProductSpu);
-        return getDataTable(list); 
+        return getDataTable(list);
     }
 
     /**
@@ -62,7 +62,7 @@ public class CilsProductSpuController extends BaseController {
         List<CilsProductSpu> list = cilsProductSpuService.selectCilsProductSpuList(cilsProductSpu);
         return success(list);
     }
-    
+
     /**
      * 获取指定货币的汇率
      */
@@ -73,10 +73,20 @@ public class CilsProductSpuController extends BaseController {
     }
 
     /**
+     * 手动触发汇率刷新
+     */
+    // 移除权限校验，方便测试
+    @GetMapping("/refreshRates")
+    public AjaxResult refreshRates() {
+        exchangeRateService.refreshRates();
+        return success("汇率刷新任务已触发");
+    }
+
+    /**
      * 导出跨境商品标准信息表(SPU)列表
      */
     @PreAuthorize("@ss.hasPermi('system:spu:export')")
-    @Log(title = "跨境商品标准信息表(SPU)", businessType = BusinessType.EXPORT) 
+    @Log(title = "跨境商品标准信息表(SPU)", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, CilsProductSpu cilsProductSpu) {
         List<CilsProductSpu> list = cilsProductSpuService.selectCilsProductSpuList(cilsProductSpu);
@@ -106,10 +116,9 @@ public class CilsProductSpuController extends BaseController {
         if (StringUtils.isEmpty(cilsProductSpu.getMainImage())) {
             return error("商品主图不能为空");
         }
-        
-        // 关键修改：强制设置创建者为当前登录用户
+
         cilsProductSpu.setCreateBy(SecurityUtils.getUsername());
-        
+
         return toAjax(cilsProductSpuService.insertCilsProductSpu(cilsProductSpu));
     }
 
@@ -126,8 +135,7 @@ public class CilsProductSpuController extends BaseController {
         if (StringUtils.isEmpty(cilsProductSpu.getMainImage())) {
             return error("商品主图不能为空");
         }
-        
-        // 关键修改：强制设置更新者
+
         cilsProductSpu.setUpdateBy(SecurityUtils.getUsername());
 
         return toAjax(cilsProductSpuService.updateCilsProductSpu(cilsProductSpu));

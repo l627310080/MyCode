@@ -107,6 +107,15 @@
       <el-table-column label="采购价" align="center" prop="purchasePrice" width="100" />
       <el-table-column label="库存" align="center" prop="stockQty" width="100" />
       <el-table-column label="重量(kg)" align="center" prop="weightKg" width="100" />
+      <el-table-column label="审核状态" align="center" prop="isAudit" width="100">
+        <template slot-scope="scope">
+          <el-tag v-if="scope.row.isAudit === 0" type="info">待审核</el-tag>
+          <el-tag v-else-if="scope.row.isAudit === 1" type="success">审核通过</el-tag>
+          <el-tag v-else-if="scope.row.isAudit === 2" type="danger">合规拦截</el-tag>
+          <span v-else>{{ scope.row.isAudit }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="备注" align="center" prop="remark" min-width="150" :show-overflow-tooltip="true" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="120">
         <template slot-scope="scope">
           <el-button
@@ -161,7 +170,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="SKU编码" prop="skuCode">
-              <el-input v-model="form.skuCode" placeholder="填写"规格描述"后自动生成" readonly />
+              <el-input v-model="form.skuCode" placeholder="填写规格描述后自动生成" readonly />
             </el-form-item>
           </el-col>
           <el-col :span="24">
@@ -175,7 +184,7 @@
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="采购价" prop="purchasePrice">
+            <el-form-item label="采购价(RMB)" prop="purchasePrice" label-width="110px">
               <el-input
                 v-model="form.purchasePrice"
                 placeholder="请输入采购价"
@@ -196,7 +205,7 @@
         </el-row>
 
         <!-- 一键铺货区域 -->
-        <div v-if="!form.id">
+        <div>
           <el-divider content-position="left">一键铺货 (自动创建映射)</el-divider>
           <el-button type="primary" icon="el-icon-plus" size="mini" @click="addTargetMarket" style="margin-bottom: 10px;">添加发布目标</el-button>
           <el-table :data="form.targetMarkets" border style="width: 100%" :key="tableKey">
@@ -238,7 +247,7 @@
                 <el-input
                   v-model="scope.row.inputValue"
                   placeholder="价格或倍数"
-                  @input="handleInputValueChange(scope.$index, scope.row.inputValue)"
+                  @change="handleInputValueChange(scope.$index, scope.row.inputValue)"
                 />
               </template>
             </el-table-column>

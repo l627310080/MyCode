@@ -96,7 +96,7 @@
           <span v-else>{{ scope.row.isAudit }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="备注" align="center" prop="remark" min-width="150" :show-overflow-tooltip="true" />
+
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="120">
         <template slot-scope="scope">
           <el-button
@@ -143,9 +143,6 @@
         </el-form-item>
         <el-form-item label="主图" prop="mainImage">
           <image-upload v-model="form.mainImage"/>
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">

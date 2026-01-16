@@ -33,21 +33,12 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="售价(USD)" prop="salePriceUsd">
-        <el-input
-          v-model="queryParams.salePriceUsd"
-          placeholder="请输入售价"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
       <el-form-item label="同步状态" prop="syncStatus">
-        <el-input
-          v-model="queryParams.syncStatus"
-          placeholder="请输入同步状态"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
+        <el-select v-model="queryParams.syncStatus" placeholder="请选择同步状态" clearable>
+          <el-option label="待同步" value="0" />
+          <el-option label="已同步" value="1" />
+          <el-option label="同步失败" value="2" />
+        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
@@ -108,8 +99,29 @@
       <el-table-column label="平台类型" align="center" prop="platformType" min-width="120" />
       <el-table-column label="目标国家" align="center" prop="targetCountry" min-width="100" />
       <el-table-column label="平台SKU" align="center" prop="platformSku" min-width="150" :show-overflow-tooltip="true" />
-      <el-table-column label="售价(USD)" align="center" prop="salePriceUsd" min-width="120" />
-      <el-table-column label="同步状态" align="center" prop="syncStatus" min-width="100" />
+      <el-table-column label="平台商品ID" align="center" prop="platformItemId" min-width="150" :show-overflow-tooltip="true" />
+      <el-table-column label="售价" align="center" min-width="120">
+        <template slot-scope="scope">
+          {{ scope.row.currency }} {{ scope.row.salePrice }}
+        </template>
+      </el-table-column>
+      <!-- 新增：是否已推送 -->
+      <el-table-column label="是否已推送" align="center" width="100">
+        <template slot-scope="scope">
+          <el-tag v-if="scope.row.syncStatus === 1" type="success">是</el-tag>
+          <el-tag v-else type="danger">否</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="同步状态" align="center" prop="syncStatus" min-width="100">
+        <template slot-scope="scope">
+          <el-tag v-if="scope.row.syncStatus === 0" type="info">待同步</el-tag>
+          <el-tag v-else-if="scope.row.syncStatus === 1" type="success">已同步</el-tag>
+          <el-tag v-else-if="scope.row.syncStatus === 2" type="danger">同步失败</el-tag>
+          <span v-else>{{ scope.row.syncStatus }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="失败原因" align="center" prop="syncFailReason" min-width="150" :show-overflow-tooltip="true" />
+      <el-table-column label="备注(翻译)" align="center" prop="remark" min-width="150" :show-overflow-tooltip="true" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" min-width="180">
         <template slot-scope="scope">
           <el-button
@@ -147,31 +159,63 @@
 
     <!-- 添加或修改跨平台商品映射对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="SKU ID" prop="skuId">
-          <el-input v-model="form.skuId" placeholder="请输入SKU ID" />
+      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+        <el-form-item label="关联SKU" prop="skuId">
+          <el-select
+            v-model="form.skuId"
+            filterable
+            remote
+            reserve-keyword
+            placeholder="请输入SKU编码搜索"
+            :remote-method="remoteMethod"
+            :loading="searchLoading"
+            @change="handleSkuChange"
+            :disabled="!!form.id">
+            <el-option
+              v-for="item in skuOptions"
+              :key="item.id"
+              :label="item.skuCode"
+              :value="item.id">
+            </el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="平台类型" prop="platformType">
-          <el-select v-model="form.platformType" placeholder="请选择平台">
+          <el-select v-model="form.platformType" placeholder="请选择平台" :disabled="!!form.id">
             <el-option label="Amazon" value="AMAZON" />
             <el-option label="Shopee" value="SHOPEE" />
           </el-select>
         </el-form-item>
         <el-form-item label="目标国家" prop="targetCountry">
-          <el-select v-model="form.targetCountry" placeholder="请选择国家">
+          <el-select v-model="form.targetCountry" placeholder="请选择国家" :disabled="!!form.id">
             <el-option label="美国 (US)" value="US" />
             <el-option label="英国 (UK)" value="UK" />
             <el-option label="日本 (JP)" value="JP" />
+            <el-option label="泰国 (TH)" value="TH" />
           </el-select>
         </el-form-item>
         <el-form-item label="平台SKU" prop="platformSku">
-          <el-input v-model="form.platformSku" placeholder="请输入平台SKU" />
+          <el-input v-model="form.platformSku" placeholder="自动填充" readonly />
         </el-form-item>
-        <el-form-item label="售价(USD)" prop="salePriceUsd">
-          <el-input v-model="form.salePriceUsd" placeholder="请输入售价" />
+        <el-form-item label="售价" prop="salePrice">
+          <el-input v-model="form.salePrice" placeholder="请输入售价" />
         </el-form-item>
-        <el-form-item label="同步状态" prop="syncStatus">
-          <el-input v-model="form.syncStatus" placeholder="请输入同步状态" />
+<!--        <el-form-item label="币种" prop="currency">-->
+<!--          <el-input v-model="form.currency" placeholder="请输入币种" />-->
+<!--        </el-form-item>-->
+
+        <el-form-item label="平台商品ID" prop="platformItemId" v-if="form.platformItemId">
+          <el-input v-model="form.platformItemId" readonly />
+        </el-form-item>
+        <el-form-item label="同步状态" prop="syncStatus" v-if="form.id">
+           <el-tag v-if="form.syncStatus === 0" type="info">待同步</el-tag>
+           <el-tag v-else-if="form.syncStatus === 1" type="success">已同步</el-tag>
+           <el-tag v-else-if="form.syncStatus === 2" type="danger">同步失败</el-tag>
+        </el-form-item>
+        <el-form-item label="失败原因" prop="syncFailReason" v-if="form.syncFailReason">
+          <el-input v-model="form.syncFailReason" type="textarea" readonly />
+        </el-form-item>
+        <el-form-item label="备注(翻译)" prop="remark" v-if="form.remark">
+          <el-input v-model="form.remark" type="textarea" readonly :rows="3" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -184,6 +228,7 @@
 
 <script>
 import { listMapping, getMapping, delMapping, addMapping, updateMapping } from "@/api/system/mapping"
+import { listSku } from "@/api/system/sku"
 import request from '@/utils/request'
 
 export default {
@@ -212,9 +257,11 @@ export default {
       form: {},
       rules: {
         skuId: [
-          { required: true, message: "SKU ID不能为空", trigger: "blur" }
+          { required: true, message: "SKU ID不能为空", trigger: "change" }
         ],
-      }
+      },
+      skuOptions: [],
+      searchLoading: false
     }
   },
   created() {
@@ -229,6 +276,19 @@ export default {
         this.loading = false
       })
     },
+    remoteMethod(query) {
+      this.searchLoading = true;
+      listSku({ skuCode: query, isAudit: 1, pageNum: 1, pageSize: 20 }).then(response => {
+        this.searchLoading = false;
+        this.skuOptions = response.rows;
+      });
+    },
+    handleSkuChange(skuId) {
+      const selectedSku = this.skuOptions.find(item => item.id === skuId);
+      if (selectedSku) {
+        this.form.platformSku = selectedSku.skuCode;
+      }
+    },
     cancel() {
       this.open = false
       this.reset()
@@ -240,11 +300,16 @@ export default {
         platformType: null,
         targetCountry: null,
         platformSku: null,
-        salePriceUsd: null,
-        syncStatus: null,
+        platformItemId: null,
+        salePrice: null,
+        currency: null,
+        syncStatus: 0,
+        syncFailReason: null,
+        remark: null,
         createTime: null
       }
       this.resetForm("form")
+      this.skuOptions = [];
     },
     handleQuery() {
       this.queryParams.pageNum = 1
@@ -263,6 +328,7 @@ export default {
       this.reset()
       this.open = true
       this.title = "添加跨平台商品映射"
+      this.remoteMethod('');
     },
     handleUpdate(row) {
       this.reset()
@@ -315,6 +381,7 @@ export default {
         })
       }).then(() => {
         this.$modal.msgSuccess("推送任务已提交");
+        setTimeout(() => this.getList(), 1000);
       }).catch(() => {});
     }
   }

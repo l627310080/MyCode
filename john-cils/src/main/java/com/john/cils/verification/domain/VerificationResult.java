@@ -50,4 +50,20 @@ public class VerificationResult {
     public String getMessage() {
         return message;
     }
+
+    // --- 兼容性别名方法 ---
+
+    /**
+     * 是否校验通过 (isSuccess 的别名)
+     */
+    public boolean isPass() {
+        return success;
+    }
+
+    /**
+     * 获取失败原因 (getMessage 的别名)
+     */
+    public String getFailReason() {
+        return message;
+    }
 }

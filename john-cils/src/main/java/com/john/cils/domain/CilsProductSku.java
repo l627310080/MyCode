@@ -1,5 +1,7 @@
 package com.john.cils.domain;
 
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.john.cils.domain.dto.TargetMarketDTO;
 import com.john.cils.verification.domain.Verifiable;
 import com.ruoyi.common.annotation.Excel;
@@ -54,10 +56,21 @@ public class CilsProductSku extends BaseEntity implements Verifiable {
     @Excel(name = "审核状态")
     private Integer isAudit;
 
+    /** 逻辑删除标志 */
+    @TableLogic
+    private String delFlag;
+
     /** 
      * 目标市场列表 (虚拟字段，用于一键铺货)
      */
+    @TableField(exist = false)
     private List<TargetMarketDTO> targetMarkets;
+    
+    /**
+     * 所属 SPU 名称 (虚拟字段，用于 AI 校验)
+     */
+    @TableField(exist = false)
+    private String spuName;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -86,8 +99,14 @@ public class CilsProductSku extends BaseEntity implements Verifiable {
     public Integer getIsAudit() { return isAudit; }
     public void setIsAudit(Integer isAudit) { this.isAudit = isAudit; }
 
+    public String getDelFlag() { return delFlag; }
+    public void setDelFlag(String delFlag) { this.delFlag = delFlag; }
+
     public List<TargetMarketDTO> getTargetMarkets() { return targetMarkets; }
     public void setTargetMarkets(List<TargetMarketDTO> targetMarkets) { this.targetMarkets = targetMarkets; }
+
+    public String getSpuName() { return spuName; }
+    public void setSpuName(String spuName) { this.spuName = spuName; }
 
     // --- Verifiable 接口实现 ---
     @Override
@@ -107,6 +126,7 @@ public class CilsProductSku extends BaseEntity implements Verifiable {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("id", getId())
                 .append("skuCode", getSkuCode())
+                .append("spuName", getSpuName())
                 .append("targetMarkets", getTargetMarkets())
                 .toString();
     }
