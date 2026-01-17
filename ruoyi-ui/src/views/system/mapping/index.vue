@@ -105,7 +105,6 @@
           {{ scope.row.currency }} {{ scope.row.salePrice }}
         </template>
       </el-table-column>
-      <!-- 新增：是否已推送 -->
       <el-table-column label="是否已推送" align="center" width="100">
         <template slot-scope="scope">
           <el-tag v-if="scope.row.syncStatus === 1" type="success">是</el-tag>
@@ -199,9 +198,9 @@
         <el-form-item label="售价" prop="salePrice">
           <el-input v-model="form.salePrice" placeholder="请输入售价" />
         </el-form-item>
-<!--        <el-form-item label="币种" prop="currency">-->
-<!--          <el-input v-model="form.currency" placeholder="请输入币种" />-->
-<!--        </el-form-item>-->
+        <el-form-item label="币种" prop="currency">
+          <el-input v-model="form.currency" placeholder="请输入币种" />
+        </el-form-item>
 
         <el-form-item label="平台商品ID" prop="platformItemId" v-if="form.platformItemId">
           <el-input v-model="form.platformItemId" readonly />
@@ -259,6 +258,10 @@ export default {
         skuId: [
           { required: true, message: "SKU ID不能为空", trigger: "change" }
         ],
+        salePrice: [
+          { required: true, message: "售价不能为空", trigger: "blur" },
+          { pattern: /^([1-9]\d*(\.\d+)?|0\.\d*[1-9]\d*)$/, message: "售价必须大于0", trigger: "blur" }
+        ]
       },
       skuOptions: [],
       searchLoading: false

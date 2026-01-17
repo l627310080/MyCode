@@ -56,7 +56,8 @@
           size="mini"
           @click="handleAdd"
           v-hasPermi="['system:sku:add']"
-        >新增</el-button>
+        >新增
+        </el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
@@ -67,7 +68,8 @@
           :disabled="single"
           @click="handleUpdate"
           v-hasPermi="['system:sku:edit']"
-        >修改</el-button>
+        >修改
+        </el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
@@ -78,7 +80,8 @@
           :disabled="multiple"
           @click="handleDelete"
           v-hasPermi="['system:sku:remove']"
-        >删除</el-button>
+        >删除
+        </el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
@@ -88,25 +91,26 @@
           size="mini"
           @click="handleExport"
           v-hasPermi="['system:sku:export']"
-        >导出</el-button>
+        >导出
+        </el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <el-table v-loading="loading" :data="skuList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="主键ID" align="center" prop="id" width="80" />
-      <el-table-column label="SPU ID" align="center" prop="spuId" width="100" />
-      <el-table-column label="SKU编码" align="center" prop="skuCode" width="150" />
-      <el-table-column label="规格描述" align="center" prop="specInfo" min-width="180" :show-overflow-tooltip="true" />
+      <el-table-column type="selection" width="55" align="center"/>
+      <el-table-column label="主键ID" align="center" prop="id" width="80"/>
+      <el-table-column label="SPU ID" align="center" prop="spuId" width="100"/>
+      <el-table-column label="SKU编码" align="center" prop="skuCode" width="150"/>
+      <el-table-column label="规格描述" align="center" prop="specInfo" min-width="180" :show-overflow-tooltip="true"/>
       <el-table-column label="规格图" align="center" prop="skuImage" width="100">
         <template slot-scope="scope">
           <image-preview :src="scope.row.skuImage" :width="50" :height="50"/>
         </template>
       </el-table-column>
-      <el-table-column label="采购价" align="center" prop="purchasePrice" width="100" />
-      <el-table-column label="库存" align="center" prop="stockQty" width="100" />
-      <el-table-column label="重量(kg)" align="center" prop="weightKg" width="100" />
+      <el-table-column label="采购价" align="center" prop="purchasePrice" width="100"/>
+      <el-table-column label="库存" align="center" prop="stockQty" width="100"/>
+      <el-table-column label="重量(kg)" align="center" prop="weightKg" width="100"/>
       <el-table-column label="审核状态" align="center" prop="isAudit" width="100">
         <template slot-scope="scope">
           <el-tag v-if="scope.row.isAudit === 0" type="info">待审核</el-tag>
@@ -115,7 +119,7 @@
           <span v-else>{{ scope.row.isAudit }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="备注" align="center" prop="remark" min-width="150" :show-overflow-tooltip="true" />
+      <el-table-column label="备注" align="center" prop="remark" min-width="150" :show-overflow-tooltip="true"/>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="120">
         <template slot-scope="scope">
           <el-button
@@ -124,14 +128,16 @@
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
             v-hasPermi="['system:sku:edit']"
-          >修改</el-button>
+          >修改
+          </el-button>
           <el-button
             size="mini"
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
             v-hasPermi="['system:sku:remove']"
-          >删除</el-button>
+          >删除
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -144,7 +150,7 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改商品SKU对话框 -->
+    <!-- 添加或修改商品单品规格(SKU)对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-row>
@@ -170,12 +176,12 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="SKU编码" prop="skuCode">
-              <el-input v-model="form.skuCode" placeholder="填写规格描述后自动生成" readonly />
+              <el-input v-model="form.skuCode" placeholder="填写规格描述后自动生成" readonly/>
             </el-form-item>
           </el-col>
           <el-col :span="24">
             <el-form-item label="规格描述" prop="specInfo">
-              <el-input v-model="form.specInfo" type="textarea" placeholder="例如: 红色, XL" @input="generateSkuCode" />
+              <el-input v-model="form.specInfo" type="textarea" placeholder="例如: 红色, XL" @input="generateSkuCode"/>
             </el-form-item>
           </el-col>
           <el-col :span="24">
@@ -194,12 +200,12 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="库存" prop="stockQty">
-              <el-input v-model.number="form.stockQty" placeholder="请输入库存" />
+              <el-input v-model.number="form.stockQty" placeholder="请输入库存"/>
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="重量(kg)" prop="weightKg">
-              <el-input v-model.number="form.weightKg" placeholder="请输入重量" />
+              <el-input v-model.number="form.weightKg" placeholder="请输入重量"/>
             </el-form-item>
           </el-col>
         </el-row>
@@ -207,13 +213,15 @@
         <!-- 一键铺货区域 -->
         <div>
           <el-divider content-position="left">一键铺货 (自动创建映射)</el-divider>
-          <el-button type="primary" icon="el-icon-plus" size="mini" @click="addTargetMarket" style="margin-bottom: 10px;">添加发布目标</el-button>
+          <el-button type="primary" icon="el-icon-plus" size="mini" @click="addTargetMarket"
+                     style="margin-bottom: 10px;">添加发布目标
+          </el-button>
           <el-table :data="form.targetMarkets" border style="width: 100%" :key="tableKey">
             <el-table-column label="平台" width="120">
               <template slot-scope="scope">
                 <el-select v-model="scope.row.platform" placeholder="选择平台">
-                  <el-option label="Amazon" value="AMAZON" />
-                  <el-option label="Shopee" value="SHOPEE" />
+                  <el-option label="Amazon" value="AMAZON"/>
+                  <el-option label="Shopee" value="SHOPEE"/>
                 </el-select>
               </template>
             </el-table-column>
@@ -224,9 +232,9 @@
                   placeholder="选择国家"
                   @change="handleCountryChange(scope.$index, scope.row.country)"
                 >
-                  <el-option label="美国 (US)" value="US" />
-                  <el-option label="英国 (UK)" value="UK" />
-                  <el-option label="泰国 (TH)" value="TH" />
+                  <el-option label="美国 (US)" value="US"/>
+                  <el-option label="英国 (UK)" value="UK"/>
+                  <el-option label="泰国 (TH)" value="TH"/>
                 </el-select>
               </template>
             </el-table-column>
@@ -237,8 +245,8 @@
                   placeholder="模式"
                   @change="handlePriceModeChange(scope.$index, scope.row.priceMode)"
                 >
-                  <el-option label="固定价格" value="FIXED" />
-                  <el-option label="倍数定价" value="MULTIPLIER" />
+                  <el-option label="固定价格" value="FIXED"/>
+                  <el-option label="倍数定价" value="MULTIPLIER"/>
                 </el-select>
               </template>
             </el-table-column>
@@ -275,8 +283,8 @@
 </template>
 
 <script>
-import { listSku, getSku, delSku, addSku, updateSku } from "@/api/system/sku"
-import { listSpu } from "@/api/system/spu"
+import {addSku, delSku, getSku, listSku, updateSku} from "@/api/system/sku"
+import {listSpu} from "@/api/system/spu"
 import request from '@/utils/request'
 
 export default {
@@ -309,7 +317,7 @@ export default {
       form: {},
       rules: {
         spuId: [
-          { required: true, message: "所属SPU不能为空", trigger: "change" }
+          {required: true, message: "所属SPU不能为空", trigger: "change"}
         ],
       },
       rates: {},
@@ -335,7 +343,7 @@ export default {
     },
     remoteMethod(query) {
       this.searchLoading = true;
-      listSpu({ productName: query, isAudit: 1, pageNum: 1, pageSize: 20 }).then(response => {
+      listSpu({productName: query, isAudit: 1, pageNum: 1, pageSize: 20}).then(response => {
         this.searchLoading = false;
         this.spuOptions = response.rows;
       });
@@ -371,7 +379,7 @@ export default {
     },
     handleSelectionChange(selection) {
       this.ids = selection.map(item => item.id)
-      this.single = selection.length!==1
+      this.single = selection.length !== 1
       this.multiple = !selection.length
     },
     handleAdd() {
@@ -414,12 +422,13 @@ export default {
     },
     handleDelete(row) {
       const ids = row.id || this.ids
-      this.$modal.confirm('是否确认删除SKU编号为"' + ids + '"的数据项？').then(function() {
+      this.$modal.confirm('是否确认删除SKU编号为"' + ids + '"的数据项？').then(function () {
         return delSku(ids)
       }).then(() => {
         this.getList()
         this.$modal.msgSuccess("删除成功")
-      }).catch(() => {})
+      }).catch(() => {
+      })
     },
     handleExport() {
       this.download('system/sku/export', {

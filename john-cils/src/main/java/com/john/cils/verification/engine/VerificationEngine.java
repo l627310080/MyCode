@@ -9,6 +9,7 @@ import com.john.cils.mapper.CilsProductSpuMapper;
 import com.john.cils.utils.python.PythonRunnerUtils;
 import com.john.cils.verification.domain.Verifiable;
 import com.john.cils.verification.domain.VerificationResult;
+import com.ruoyi.system.service.ISysDictDataService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,9 @@ public class VerificationEngine {
 
     @Autowired
     private CilsProductSpuMapper spuMapper;
+    
+    @Autowired
+    private ISysDictDataService dictDataService;
 
     public VerificationResult executeBatch(Verifiable data, List<CilsRuleConfig> rules) {
         if (rules == null || rules.isEmpty()) {
@@ -44,24 +48,33 @@ public class VerificationEngine {
         context.put("productData", data);
         
         String productName = "未知商品";
-        String categoryName = ""; // 新增：类目名称
+        String categoryName = "未知类目"; 
         
         if (data instanceof CilsProductSpu) {
             CilsProductSpu spu = (CilsProductSpu) data;
             productName = spu.getProductName();
-            categoryName = spu.getCategoryName(); // 获取类目名称
+            // SPU 对象里可能已经填充了 categoryName (在 Service 层)
+            // 如果没有，尝试根据 ID 查字典
+            if (spu.getCategoryName() != null) {
+                categoryName = spu.getCategoryName();
+            } else if (spu.getCategoryId() != null) {
+                categoryName = dictDataService.selectDictLabel("cils_category", spu.getCategoryId().toString());
+            }
         } else if (data instanceof CilsProductSku) {
             Long spuId = ((CilsProductSku) data).getSpuId();
             if (spuId != null) {
                 CilsProductSpu spu = spuMapper.selectCilsProductSpuById(spuId);
                 if (spu != null) {
                     productName = spu.getProductName();
-                    // 注意：这里我们没法轻易获取 SPU 的 categoryName，除非再查一次字典
-                    // 但 SKU 校验主要关注与 SPU 的一致性，所以 SPU 标题通常够用了
-                    // 如果需要，可以在这里也查一下字典
+                    // 关键修复：根据 SPU 的 categoryId 查出类目名称
+                    if (spu.getCategoryId() != null) {
+                        categoryName = dictDataService.selectDictLabel("cils_category", spu.getCategoryId().toString());
+                    }
                 }
             }
         }
+        
+        log.info("校验上下文: 商品名称={}, 类目={}", productName, categoryName);
         
         List<Map<String, String>> ruleList = new ArrayList<>();
         for (CilsRuleConfig rule : rules) {
@@ -82,7 +95,7 @@ public class VerificationEngine {
             ruleMap.put("content", rule.getAiPrompt());
             ruleMap.put("errorMsg", rule.getErrorMessage());
             ruleMap.put("productName", productName);
-            ruleMap.put("categoryName", categoryName); // 传递类目名称
+            ruleMap.put("categoryName", categoryName);
             
             String fieldType = targetField.toLowerCase();
             if (fieldType.contains("image") || fieldType.contains("img")) {
