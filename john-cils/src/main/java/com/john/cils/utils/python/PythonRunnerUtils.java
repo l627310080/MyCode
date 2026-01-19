@@ -57,7 +57,8 @@ public class PythonRunnerUtils {
                 writer.write(jsonData);
             }
 
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     log.info("[Python Output]: {}", line);
@@ -89,7 +90,8 @@ public class PythonRunnerUtils {
         }
 
         if (isPass) {
-            return VerificationResult.pass();
+            // 修正：哪怕校验通过，也将脚本传回的信息（如翻译结果）透传给上层
+            return new VerificationResult(true, failReason != null ? failReason : "校验通过");
         } else {
             return VerificationResult.fail(failReason);
         }

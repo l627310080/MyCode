@@ -41,6 +41,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where is_active = 1 and target_object = #{targetObject}
     </select>
 
+    <select id="selectRuleByTargetAndField" resultMap="CilsRuleConfigResult">
+        <include refid="selectCilsRuleConfigVo"/>
+        where target_object = #{targetObject} and target_field = #{targetField} limit 1
+    </select>
+
     <insert id="insertCilsRuleConfig" parameterType="CilsRuleConfig" useGeneratedKeys="true" keyProperty="ruleId">
         insert into cils_rule_config
         <trim prefix="(" suffix=")" suffixOverrides=",">

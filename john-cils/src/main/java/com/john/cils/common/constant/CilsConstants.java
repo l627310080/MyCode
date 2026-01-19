@@ -43,6 +43,21 @@ public class CilsConstants {
     public static final Integer AUDIT_STATUS_BLOCK = 2;
 
     /**
+     * 同步状态：已同步
+     */
+    public static final Long SYNC_STATUS_DONE = 1L;
+
+    /**
+     * 同步状态：同步失败
+     */
+    public static final Long SYNC_STATUS_FAIL = 2L;
+
+    /**
+     * 同步状态：等待校验 (AI 校验通过前不可同步)
+     */
+    public static final Long SYNC_STATUS_WAIT_VERIFY = 3L;
+
+    /**
      * 系统命令：Python解释器名称
      */
     public static final String CMD_PYTHON = "python";
@@ -56,12 +71,12 @@ public class CilsConstants {
      * 脚本输出协议：拦截
      */
     public static final String SCRIPT_OUT_BLOCK = "BLOCK";
-    
+
     /**
      * 定价模式：固定价格
      */
     public static final String PRICE_MODE_FIXED = "FIXED";
-    
+
     /**
      * 定价模式：倍数定价
      */

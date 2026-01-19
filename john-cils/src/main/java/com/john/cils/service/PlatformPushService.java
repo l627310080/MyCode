@@ -29,18 +29,18 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PlatformPushService {
 
     private static final Logger log = LoggerFactory.getLogger(PlatformPushService.class);
-    
+
     private final Map<String, IPushStrategy> strategyMap = new ConcurrentHashMap<>();
-    
+
     @Autowired
     private CilsPlatformMappingMapper mappingMapper;
-    
+
     @Autowired
     private CilsProductSkuMapper skuMapper;
-    
+
     @Autowired
     private CilsProductSpuMapper spuMapper;
-    
+
     @Autowired
     private AiTranslationService translationService;
 
@@ -58,10 +58,16 @@ public class PlatformPushService {
     @Async
     public void pushProduct(Long mappingId) {
         log.info(">>> 准备执行异步推送任务，Mapping ID: {}", mappingId);
-        
+
         CilsPlatformMapping mapping = mappingMapper.selectCilsPlatformMappingById(mappingId);
         if (mapping == null) {
             log.error("推送失败：找不到映射记录，ID: {}", mappingId);
+            return;
+        }
+
+        // --- 状态守卫：只有处于“待同步(0)”状态的记录才允许执行铺货流程 ---
+        if (mapping.getSyncStatus() != 0L) {
+            log.warn("拦截异步推送：Mapping ID {} 当前状态为 {}, 非待同步状态(0), 操作取消", mappingId, mapping.getSyncStatus());
             return;
         }
 
@@ -80,24 +86,24 @@ public class PlatformPushService {
             // 1. 获取源文本 (SPU标题 + SKU规格)
             CilsProductSku sku = skuMapper.selectCilsProductSkuById(mapping.getSkuId());
             CilsProductSpu spu = spuMapper.selectCilsProductSpuById(sku.getSpuId());
-            
+
             String sourceText = spu.getProductName() + " - " + sku.getSpecInfo();
-            
+
             // 2. 确定目标语言
-            String targetLanguage = "English"; // 默认英语
-            if ("TH".equalsIgnoreCase(mapping.getTargetCountry())) {
+            String targetLanguage = "English";
+            if ("TH".equalsIgnoreCase(mapping.getTargetCountry()))
                 targetLanguage = "Thai";
-            } else if ("JP".equalsIgnoreCase(mapping.getTargetCountry())) {
+            else if ("JP".equalsIgnoreCase(mapping.getTargetCountry()))
                 targetLanguage = "Japanese";
-            }
-            
+
             // 3. 执行翻译
             String translatedText = translationService.translate(sourceText, targetLanguage);
             log.info("翻译结果: {}", translatedText);
-            
-            // 4. 将翻译结果暂存到 remark 字段
-            mapping.setRemark(translatedText);
-            
+
+            // 4. 直接拼接翻译结果到备注中
+            String oldRemark = mapping.getRemark() != null ? mapping.getRemark() : "";
+            mapping.setRemark(oldRemark + " " + translatedText);
+
         } catch (Exception e) {
             log.warn("翻译过程中发生异常，将使用原文推送", e);
         }
@@ -110,23 +116,21 @@ public class PlatformPushService {
                 log.info("<<< 推送成功！更新同步状态为已同步");
                 String platformItemId = "ITEM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
                 mapping.setPlatformItemId(platformItemId);
-                updateMappingStatus(mapping, 1L, null); 
+                updateMappingStatus(mapping, 1L, null);
             } else {
                 log.error("<<< 推送失败！请检查网络或平台配置");
-                updateMappingStatus(mapping, 2L, "推送失败，请检查网络或平台配置"); 
+                updateMappingStatus(mapping, 2L, "推送失败，请检查网络或平台配置");
             }
         } catch (Exception e) {
             log.error("推送过程中发生未捕获异常", e);
             updateMappingStatus(mapping, 2L, "推送异常: " + e.getMessage());
         }
     }
-    
+
     private void updateMappingStatus(CilsPlatformMapping mapping, Long status, String failReason) {
         mapping.setSyncStatus(status);
         mapping.setSyncFailReason(failReason);
-        // 注意：这里调用 update 会把 mapping 对象里的 remark 也更新进去
-        // 因为 mapping 对象在 pushProduct 方法里已经被 setRemark 了
-        log.info("更新 Mapping 状态: status={}, remark={}", status, mapping.getRemark());
+        log.info("更新 Mapping {} 状态: status={}, remark={}", mapping.getId(), status, mapping.getRemark());
         mappingMapper.updateCilsPlatformMapping(mapping);
     }
 
@@ -144,6 +148,13 @@ public class PlatformPushService {
         }
 
         for (CilsPlatformMapping mapping : mappings) {
+            // --- 状态守卫：只有处于“待同步(0)”或“已同步(1)”状态的记录才允许同步库存 ---
+            // 处于“待校验(3)”状态的记录严禁同步库存到外部平台
+            if (mapping.getSyncStatus() != 0L && mapping.getSyncStatus() != 1L) {
+                log.warn("拦截库存同步：Mapping ID {} 处于非铺货状态 ({}), 严禁库存下发", mapping.getId(), mapping.getSyncStatus());
+                continue;
+            }
+
             if ("AMAZON".equalsIgnoreCase(mapping.getPlatformType())) {
                 log.info("正在同步 Amazon 库存，Platform SKU: {}", mapping.getPlatformSku());
                 AmazonPushUtils.syncStock(mapping.getPlatformSku(), 99L);

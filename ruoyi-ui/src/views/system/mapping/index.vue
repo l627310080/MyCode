@@ -199,7 +199,13 @@
           <el-input v-model="form.salePrice" placeholder="请输入售价" />
         </el-form-item>
         <el-form-item label="币种" prop="currency">
-          <el-input v-model="form.currency" placeholder="请输入币种" />
+          <el-select v-model="form.currency" placeholder="请选择币种">
+            <el-option label="美元 (USD)" value="USD" />
+            <el-option label="人民币 (CNY)" value="CNY" />
+            <el-option label="日元 (JPY)" value="JPY" />
+            <el-option label="英镑 (GBP)" value="GBP" />
+            <el-option label="泰铢 (THB)" value="THB" />
+          </el-select>
         </el-form-item>
 
         <el-form-item label="平台商品ID" prop="platformItemId" v-if="form.platformItemId">
@@ -256,11 +262,29 @@ export default {
       form: {},
       rules: {
         skuId: [
-          { required: true, message: "SKU ID不能为空", trigger: "change" }
+          { required: true, message: "关联SKU不能为空", trigger: "change" }
+        ],
+        platformType: [
+          { required: true, message: "平台类型不能为空", trigger: "change" }
+        ],
+        targetCountry: [
+          { required: true, message: "目标国家不能为空", trigger: "change" }
+        ],
+        platformSku: [
+          { required: true, message: "平台SKU不能为空", trigger: "blur" }
         ],
         salePrice: [
           { required: true, message: "售价不能为空", trigger: "blur" },
           { pattern: /^([1-9]\d*(\.\d+)?|0\.\d*[1-9]\d*)$/, message: "售价必须大于0", trigger: "blur" }
+        ],
+        currency: [
+          { required: true, message: "币种不能为空", trigger: "change" }
+        ],
+        platformItemId: [
+          { required: true, message: "平台商品ID不能为空", trigger: "blur" }
+        ],
+        remark: [
+          { required: true, message: "备注不能为空", trigger: "blur" }
         ]
       },
       skuOptions: [],

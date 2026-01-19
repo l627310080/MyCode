@@ -1,20 +1,10 @@
 import sys
 import json
 import os
-from google import genai
+from ai_client import AIClient
 
-# 从环境变量获取 API Key
-client = genai.Client()
-
-def call_gemini_text(prompt):
-    try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash", 
-            contents=prompt
-        )
-        return response.text
-    except Exception as e:
-        return f"API_ERROR: {str(e)}"
+# 初始化 AI 客户端
+client = AIClient()
 
 def main():
     try:
@@ -22,33 +12,46 @@ def main():
         json_data = raw_data.decode('utf-8', errors='replace')
         params = json.loads(json_data)
         
-        prompt = params.get('prompt')
+        # 这里的 prompt 实际上是待翻译的内容 + 目标语言要求
+        # 我们假设 Java 端传来的 'prompt' 字段包含了这些信息
+        # 或者，如果 Java 端改了，传的是 'content' 和 'template'
         
-        if not prompt:
+        content = params.get('content') # 待翻译内容
+        template = params.get('template') # 翻译模板
+        
+        # 兼容旧逻辑：如果只传了 prompt，则直接使用
+        full_prompt = params.get('prompt')
+        
+        if content and template:
+            full_prompt = template.replace("{content}", content)
+        
+        if not full_prompt:
             print("FAIL_REASON:Prompt为空")
             print("BLOCK")
             return
 
-        result = call_gemini_text(prompt)
+        # 使用统一的 AI 客户端调用
+        result = client.call_text(full_prompt)
         
-        if "API_ERROR" in result:
+        # 打印自愈后的结果概况
+        print(f"DEBUG: [翻译请求结果] AI回复长度: {len(result)}")
+        
+        # 错误检查：如果结果包含错误关键字，走报错流程
+        if "API_ERROR" in result or "OPENROUTER_ERROR" in result:
             print(f"FAIL_REASON:{result}")
             print("BLOCK")
-        else:
-            # 成功，直接输出翻译结果作为 message
-            # 注意：VerificationResult 会把 FAIL_REASON 后的内容作为 message
-            # 这里我们稍微 hack 一下，把翻译结果打印在 FAIL_REASON 后面，但状态打印 PASS
-            # Java 端需要适配：如果 PASS，则 message 是翻译结果
-            
-            # 清理结果中的换行符
-            result = result.strip()
-            print(f"FAIL_REASON:{result}") 
-            print("PASS")
+            return
+
+        # 成功，直接输出翻译结果作为 message
+        # 清理结果中的换行符
+        result = result.strip()
+        print(f"FAIL_REASON:{result}") 
+        print("PASS")
         
     except Exception as e:
         print(f"FAIL_REASON:脚本执行异常 - {str(e)}")
         print("BLOCK")
 
 if __name__ == "__main__":
-    sys.stdout.reconfigure(encoding='utf-8')
+    # sys.stdout.reconfigure(encoding='utf-8')
     main()

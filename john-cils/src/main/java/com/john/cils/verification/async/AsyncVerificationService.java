@@ -1,5 +1,6 @@
 package com.john.cils.verification.async;
 
+import com.john.cils.common.constant.CilsConstants;
 import com.john.cils.domain.CilsPlatformMapping;
 import com.john.cils.domain.CilsProductSku;
 import com.john.cils.domain.CilsProductSpu;
@@ -49,11 +50,11 @@ public class AsyncVerificationService {
     // SKU Mapper，用于更新 SKU 状态
     @Autowired
     private CilsProductSkuMapper skuMapper;
-    
+
     // Mapping Mapper，用于查询待推送的映射记录
     @Autowired
     private CilsPlatformMappingMapper mappingMapper;
-    
+
     // 推送服务，用于将校验通过的商品推送到外部平台
     @Autowired
     private PlatformPushService platformPushService;
@@ -69,81 +70,78 @@ public class AsyncVerificationService {
     @Async
     public void triggerVerification(Verifiable data) {
         log.info(">>> 异步校验任务开始，对象: {}", data.getIdentity());
-        
+
         try {
             // 执行具体的校验逻辑
             VerificationResult result = doVerify(data);
-            
+
             // 根据校验结果计算新的状态
             // 1 = 审核通过, 2 = 合规拦截
             int status = result.isPass() ? 1 : 2;
             // 如果通过，备注为“校验通过”；如果不通过，备注为具体的失败原因
             String remark = result.isPass() ? "校验通过" : result.getFailReason();
-            
+
             // 更新内存中对象的审核状态和备注
             data.updateAuditStatus(status, remark);
-            
+
             // 将更新后的状态回写到数据库
             if (data instanceof CilsProductSpu) {
                 spuMapper.updateCilsProductSpu((CilsProductSpu) data);
             } else if (data instanceof CilsProductSku) {
                 CilsProductSku sku = (CilsProductSku) data;
                 skuMapper.updateCilsProductSku(sku);
-                
+
                 // 关键逻辑：如果 SKU 校验通过，自动触发关联 Mapping 的推送
                 if (result.isPass()) {
                     triggerPushForSku(sku.getId());
                 }
             }
-            
+
             log.info("<<< 异步校验任务结束，最终状态: {}", status);
-            
+
         } catch (Exception e) {
             log.error("异步校验过程中发生异常", e);
         }
     }
 
     /**
-     * 触发指定 SKU 关联的所有待推送 Mapping 的推送任务
+     * 触发指定 SKU 关联且处于“等待校验”状态的 Mapping 推送任务
+     * 
      * @param skuId SKU ID
      */
     private void triggerPushForSku(Long skuId) {
-        // 查询该 SKU 下所有的平台映射
         CilsPlatformMapping query = new CilsPlatformMapping();
         query.setSkuId(skuId);
+        // 查询该 SKU 下所有的平台映射
         List<CilsPlatformMapping> mappings = mappingMapper.selectCilsPlatformMappingList(query);
-        
+
         if (mappings != null && !mappings.isEmpty()) {
-            log.info("SKU {} 校验通过，开始触发 {} 条 Mapping 推送", skuId, mappings.size());
+            log.info("SKU {} 校验通过，开始扫描待释放的同步记录", skuId);
+            boolean hasReleased = false;
             for (CilsPlatformMapping mapping : mappings) {
-                // 只有 sync_status 为 0 (待同步) 的记录才需要推送
-                // 避免重复推送已成功的记录
-                if (mapping.getSyncStatus() == 0L) {
+                // 只有处于“等待校验”状态的记录才允许被释放并推送
+                if (CilsConstants.SYNC_STATUS_WAIT_VERIFY.equals(mapping.getSyncStatus())) {
+                    log.info("释放 Mapping ID: {}, 状态由 WAIT_VERIFY 转为 待同步", mapping.getId());
+                    mapping.setSyncStatus(0L); // 0 = 待同步 (已就绪)
+                    mappingMapper.updateCilsPlatformMapping(mapping);
+
+                    // 1. 发起全量铺货 (异步逻辑由 PlatformPushService 内部实现)
                     platformPushService.pushProduct(mapping.getId());
+                    hasReleased = true;
                 }
+            }
+
+            // 2. 如果发生了记录释放，则触发一次该 SKU 的全局库存同步
+            if (hasReleased) {
+                log.info("SKU {} 存在新释放的同步记录，触发精准库存同步", skuId);
+                platformPushService.syncStock(skuId);
             }
         }
     }
 
     /**
-     * 执行同步校验 (严格模式)
-     * <p>
-     * 该方法在当前线程中执行，会阻塞调用者，直到校验完成。
-     * 适用于需要立即知道校验结果的场景，如 SKU 严格入库检查。
-     *
-     * @param data 待校验的数据对象
-     * @return 校验结果
-     */
-    public VerificationResult verifySync(Verifiable data) {
-        log.info(">>> 同步校验开始，对象: {}", data.getIdentity());
-        // 执行校验
-        VerificationResult result = doVerify(data);
-        log.info("<<< 同步校验结束，结果: {}", result.isPass() ? "PASS" : "BLOCK");
-        return result;
-    }
-
-    /**
      * 校验逻辑的核心实现
+     * 
      * @param data 待校验的数据对象
      * @return 校验结果
      */
@@ -155,15 +153,15 @@ public class AsyncVerificationService {
         } else if (data instanceof CilsProductSku) {
             targetObject = "SKU";
         }
-        
+
         // 2. 从数据库中查询针对该类型的校验规则
         List<CilsRuleConfig> rules = ruleConfigMapper.selectRulesByTarget(targetObject);
-        
+
         // 如果没有配置任何规则，默认视为通过
         if (rules == null || rules.isEmpty()) {
             return VerificationResult.pass();
         }
-        
+
         // 3. 调用校验引擎执行规则检查
         return verificationEngine.executeBatch(data, rules);
     }

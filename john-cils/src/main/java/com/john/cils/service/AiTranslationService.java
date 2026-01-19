@@ -53,8 +53,8 @@ public class AiTranslationService {
         VerificationResult result = PythonRunnerUtils.runScript("py_scripts/translator.py", jsonData);
         
         if (result.isPass()) {
-            String translatedText = result.getMessage(); 
-            log.info("<<< 翻译完成: {}", translatedText);
+            String translatedText = result.getMessage();
+            log.info("<<< 翻译完成 {}", translatedText);
             return translatedText;
         } else {
             log.error("翻译失败: {}", result.getFailReason());

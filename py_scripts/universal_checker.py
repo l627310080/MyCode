@@ -1,41 +1,14 @@
-import sys
-import json
 import base64
-import requests
+import json
 import os
-from google import genai
-from google.genai import types
+import requests
+import sys
 
-client = genai.Client()
+from ai_client import AIClient
 
-def call_gemini_text(prompt):
-    try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash", 
-            contents=prompt
-        )
-        return response.text
-    except Exception as e:
-        return f"API请求异常: {str(e)}"
+# 初始化 AI 客户端
+client = AIClient()
 
-def call_gemini_vision(image_data_base64, prompt):
-    try:
-        image_bytes = base64.b64decode(image_data_base64)
-        
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[
-                types.Content(
-                    parts=[
-                        types.Part.from_text(text=prompt),
-                        types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")
-                    ]
-                )
-            ]
-        )
-        return response.text
-    except Exception as e:
-        return f"API请求异常: {str(e)}"
 
 def download_image_as_base64(url):
     try:
@@ -49,88 +22,84 @@ def download_image_as_base64(url):
     except:
         return None
 
-def check_image_ai(image_url_str, prompt_template, product_name, category_name):
+
+def check_image_ai(image_url_str, prompt_template, rule_content, product_name, category_name):
     if not image_url_str: return True, ""
-    
+
     image_urls = image_url_str.split(',')
     reasons = []
-    
+
     for image_url in image_urls:
         if not image_url.strip(): continue
-        
+
         print(f"正在下载图片: {image_url} ...")
         base64_data = download_image_as_base64(image_url)
-        
-        if not base64_data: 
+
+        if not base64_data:
             print(f"图片下载失败: {image_url}，跳过")
             continue
 
-        # 升级 Prompt：加入类目校验
-        prompt = f"""
-        你是一个严格的跨境电商合规审核员。
-        商品标题是："{product_name}"。
-        商品类目是："{category_name}"。
-        
-        请检查这张图片：
-        1. 是否包含武器、毒品、色情、暴力等违禁内容？
-        2. **图片内容是否与商品标题及类目一致？** 
-           (例如：类目是"手机"，但图片是"衣服"，必须拦截)
-        3. {prompt_template}
-        
-        如果图片合规且一致，请只回复 "PASS"。
-        如果有任何违规或不一致，请回复 "BLOCK:原因"。
-        """
-        
+        # 使用数据库传入的模板构建 Prompt
+        # 替换占位符
+        prompt = prompt_template.replace("{product_name}", product_name) \
+            .replace("{category_name}", category_name) \
+            .replace("{content}", rule_content)
+
         print(f"开始请AI判断图片是否合法 (标题: {product_name}, 类目: {category_name}): {image_url}")
-        result = call_gemini_vision(base64_data, prompt)
-        print(f"AI回复: {result}")
-        
+
+        # 使用统一客户端调用 Vision 能力
+        result = client.call_vision(base64_data, prompt)
+        print(f"图片识别AI回复: {result}")
+
         if "BLOCK" in result:
             reasons.append(result.replace("BLOCK:", "").strip())
         elif "PASS" not in result:
-            print(f"AI回复异常: {result}")
+            # 检查是否是 API 错误
+            if "API_ERROR" in result or "OPENROUTER_ERROR" in result or "Error" in result:
+                print(f"AI调用出错: {result}")
+            else:
+                print(f"AI回复异常: {result}")
 
     if reasons:
         return False, "; ".join(reasons)
     return True, ""
 
-def check_text_ai(text, prompt_template, category_name):
+
+def check_text_ai(text, prompt_template, rule_content, category_name):
     if not text: return True, ""
+
+    # 使用数据库传入的模板构建 Prompt
+    prompt = prompt_template.replace("{category_name}", category_name) \
+        .replace("{text}", text) \
+        .replace("{content}", rule_content)
+
+    # 使用统一客户端调用文本能力
+    result = client.call_text(prompt)
     
-    prompt = f"""
-    {prompt_template}
-    
-    商品类目是："{category_name}"。
-    待审核文本："{text}"
-    
-    请检查文本是否与类目一致？
-    
-    如果合规，请只回复 "PASS"。
-    如果不合规，请回复 "BLOCK:原因"。
-    """
-    
-    print(f"开始请AI判断文本是否合法: {text[:20]}...")
-    result = call_gemini_text(prompt)
-    print(f"AI回复: {result}")
-    
+    # 打印完整的 AI 响应日志，确保 Java 端能完整采集
+    print(f"DEBUG: [文本识别结果] AI回复长度: {len(result)}")
+    print(f"AI回复主体: {result}")
+
     if "BLOCK" in result:
         return False, result.replace("BLOCK:", "").strip()
     elif "PASS" not in result:
         print(f"AI回复异常: {result}")
-        return True, "" 
-    
+        return True, ""
+
     return True, ""
+
 
 def get_value_smart(product, field, rule_type):
     value = product.get(field)
     if value: return value
-    
+
     if rule_type == 'IMAGE':
         return product.get('skuImage') or product.get('mainImage')
     elif rule_type == 'TEXT':
         return product.get('specInfo') or product.get('productName')
-    
+
     return None
+
 
 def main():
     try:
@@ -139,32 +108,42 @@ def main():
         context = json.loads(json_data)
         product = context.get('productData', {})
         rules = context.get('rules', [])
-        
+
+        # 获取 Java 传来的 Prompt 模板
+        tpl_image = context.get('tpl_image', '')
+        tpl_text = context.get('tpl_text', '')
+
+        # 如果没有传模板，使用默认兜底（防止旧代码报错，但应尽量避免）
+        if not tpl_image:
+            tpl_image = 'Check this image against product "{product_name}" (Category: {category_name}). Rule: {content}. Reply PASS or BLOCK:reason.'
+        if not tpl_text:
+            tpl_text = 'Check this text "{text}" (Category: {category_name}). Rule: {content}. Reply PASS or BLOCK:reason.'
+
         print(f"开始校验，规则数量: {len(rules)}")
-        
+
         all_fail_reasons = []
-        
+
         for rule in rules:
             field = rule.get('field')
-            content = rule.get('content')
+            content = rule.get('content')  # 这是具体的规则内容，如"检查是否侵权"
             error_msg = rule.get('errorMsg', '校验失败')
-            rule_type = rule.get('type', 'TEXT') 
-            
+            rule_type = rule.get('type', 'TEXT')
+
             product_name = rule.get('productName') or product.get('productName') or product.get('specInfo') or '未知商品'
             category_name = rule.get('categoryName') or '未知类目'
-            
+
             value = get_value_smart(product, field, rule_type)
-            
+
             print(f"执行规则: {rule.get('name')}, 类型: {rule_type}, 字段: {field}")
-            
+
             is_pass = True
             reason = ""
-            
+
             if rule_type == 'IMAGE':
-                is_pass, reason = check_image_ai(str(value), content, product_name, category_name)
+                is_pass, reason = check_image_ai(str(value), tpl_image, content, product_name, category_name)
             else:
-                is_pass, reason = check_text_ai(str(value), content, category_name)
-            
+                is_pass, reason = check_text_ai(str(value), tpl_text, content, category_name)
+
             if not is_pass:
                 full_reason = f"{error_msg}: {reason}"
                 all_fail_reasons.append(full_reason)
@@ -182,6 +161,8 @@ def main():
         print(f"FAIL_REASON:脚本执行异常 - {str(e)}")
         print("BLOCK")
 
+
 if __name__ == "__main__":
-    sys.stdout.reconfigure(encoding='utf-8')
+    # 已经在 ai_client 中设置了 sys.stdout 的编码，这里不需要重复设置，或者保持一致
+    # sys.stdout.reconfigure(encoding='utf-8')
     main()
