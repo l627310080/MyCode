@@ -72,16 +72,16 @@
     </appender>
 
     <!-- 系统模块日志级别控制  -->
-    <logger name="com.ruoyi" level="info"/>
+    <logger name="com.ruoyi" level="debug"/>
+    <!-- 业务模块日志级别控制 (Kafka 生产者/消费者) -->
+    <logger name="com.john" level="debug"/>
     <!-- Spring日志级别控制  -->
-    <logger name="org.springframework" level="warn"/>
+    <logger name="org.springframework" level="info"/>
+    <!-- Kafka底层日志级别控制 -->
+    <logger name="org.apache.kafka" level="info"/>
 
     <root level="info">
         <appender-ref ref="console"/>
-    </root>
-
-    <!--系统操作日志-->
-    <root level="info">
         <appender-ref ref="file_info"/>
         <appender-ref ref="file_error"/>
     </root>

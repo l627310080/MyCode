@@ -30,6 +30,11 @@ public class StockConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(StockConsumer.class);
 
+    @javax.annotation.PostConstruct
+    public void init() {
+        log.info(">>>> [DIAGNOSTIC] StockConsumer Bean 成功加载，准备监听 Kafka...");
+    }
+
     @Autowired
     private CilsProductSkuMapper skuMapper;
 
@@ -41,6 +46,7 @@ public class StockConsumer {
      */
     @KafkaListener(topics = "stock-deduct-topic", groupId = "cils-group")
     public void handleStockDeduct(String message, Acknowledgment ack) {
+        System.out.println(">>>> [CONSUMER] 捕获到 Kafka 消息: " + message);
         log.info(">>> 收到 Kafka 库存扣减消息: {}", message);
 
         try {
@@ -56,7 +62,7 @@ public class StockConsumer {
                 CilsProductSku skuToUpdate = new CilsProductSku();
                 skuToUpdate.setId(skuId);
                 skuToUpdate.setStockQty(remainingStock);
-                
+
                 // 执行数据库更新操作
                 // 这里是直接覆盖库存，而不是减去库存，保证了操作的幂等性
                 // 即使消息被重复消费，数据库的最终结果也是正确的

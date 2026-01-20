@@ -37,6 +37,11 @@ public class CilsProductSkuServiceImpl implements ICilsProductSkuService {
 
     private static final Logger log = LoggerFactory.getLogger(CilsProductSkuServiceImpl.class);
 
+    @javax.annotation.PostConstruct
+    public void init() {
+        log.info(">>>> [DIAGNOSTIC] CilsProductSkuService Bean 成功加载，KafkaTemplate 状态: {}", kafkaTemplate != null);
+    }
+
     @Autowired
     private CilsProductSkuMapper cilsProductSkuMapper;
 
@@ -100,11 +105,11 @@ public class CilsProductSkuServiceImpl implements ICilsProductSkuService {
             return null;
 
         String inventoryKey = INVENTORY_KEY_PREFIX + id;
-        Long stockQty = redisCache.getCacheObject(inventoryKey);
+        Long stockQty = redisCache.getCacheNumber(inventoryKey);
 
         if (stockQty == null) {
             stockQty = sku.getStockQty() != null ? sku.getStockQty() : 0L;
-            redisCache.setCacheObject(inventoryKey, stockQty);
+            redisCache.setCacheNumber(inventoryKey, stockQty);
         }
 
         if (stockQty < 0)
@@ -159,7 +164,7 @@ public class CilsProductSkuServiceImpl implements ICilsProductSkuService {
         if (rows > 0) {
             Long stockQty = cilsProductSku.getStockQty() != null ? cilsProductSku.getStockQty() : 0L;
             String inventoryKey = INVENTORY_KEY_PREFIX + cilsProductSku.getId();
-            redisCache.setCacheObject(inventoryKey, stockQty);
+            redisCache.setCacheNumber(inventoryKey, stockQty);
             log.info(">>> Redis库存预热成功: key={}, value={}", inventoryKey, stockQty);
 
             autoCreateMappings(cilsProductSku);
@@ -220,7 +225,7 @@ public class CilsProductSkuServiceImpl implements ICilsProductSkuService {
             // 更新库存缓存
             if (cilsProductSku.getStockQty() != null) {
                 String inventoryKey = INVENTORY_KEY_PREFIX + cilsProductSku.getId();
-                redisCache.setCacheObject(inventoryKey, cilsProductSku.getStockQty());
+                redisCache.setCacheNumber(inventoryKey, cilsProductSku.getStockQty());
                 log.info(">>> Redis库存更新成功: key={}, value={}", inventoryKey, cilsProductSku.getStockQty());
                 // 注意：这里不再调用同步库存，必须等 AI 校验通过
             }
@@ -337,6 +342,7 @@ public class CilsProductSkuServiceImpl implements ICilsProductSkuService {
 
     @Override
     public boolean deductStock(Long skuId, Integer quantity) {
+        System.out.println(">>>> [SERVICE] 进入 deductStock 逻辑, skuId=" + skuId);
         String inventoryKey = INVENTORY_KEY_PREFIX + skuId;
         Long remainingStock = redisCache.decrBy(inventoryKey, quantity);
 
@@ -348,7 +354,9 @@ public class CilsProductSkuServiceImpl implements ICilsProductSkuService {
             message.put("remainingStock", remainingStock);
 
             try {
+                System.out.println(">>>> [SERVICE] 正在发送 Kafka 消息: " + message.toJSONString());
                 kafkaTemplate.send(TOPIC_STOCK_DEDUCT, message.toJSONString());
+                System.out.println(">>>> [SERVICE] Kafka 消息已发出");
                 log.info(">>> Kafka 消息发送成功: {}", message);
                 platformPushService.syncStock(skuId);
             } catch (Exception e) {

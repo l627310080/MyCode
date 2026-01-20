@@ -99,16 +99,17 @@ public class CilsProductSkuController extends BaseController {
      */
     @PreAuthorize("@ss.hasPermi('system:sku:remove')")
     @Log(title = "商品单品规格(SKU)", businessType = BusinessType.DELETE)
-	@DeleteMapping("/{ids}")
+    @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids) {
         return toAjax(cilsProductSkuService.deleteCilsProductSkuByIds(ids));
     }
-    
+
     /**
      * 扣减库存 (高并发接口)
      */
     @PostMapping("/deduct")
     public AjaxResult deductStock(@RequestParam Long skuId, @RequestParam Integer quantity) {
+        System.out.println(">>>> [CONTROLLER] 收到扣减请求: skuId=" + skuId + ", qty=" + quantity);
         boolean success = cilsProductSkuService.deductStock(skuId, quantity);
         if (success) {
             return success("库存扣减成功");

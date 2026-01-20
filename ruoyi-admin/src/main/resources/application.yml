@@ -35,7 +35,9 @@ server:
 logging:
   level:
     com.ruoyi: debug
-    org.springframework: warn
+    com.john: debug
+    org.springframework: info
+    org.apache.kafka: info
 
 # 用户配置
 user:

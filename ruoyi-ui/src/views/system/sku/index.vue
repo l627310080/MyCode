@@ -120,7 +120,7 @@
         </template>
       </el-table-column>
       <el-table-column label="备注" align="center" prop="remark" min-width="150" :show-overflow-tooltip="true"/>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="120">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="180">
         <template slot-scope="scope">
           <el-button
             size="mini"
@@ -137,6 +137,14 @@
             @click="handleDelete(scope.row)"
             v-hasPermi="['system:sku:remove']"
           >删除
+          </el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-refresh"
+            style="color: #67C23A"
+            @click="handleDeduct(scope.row)"
+          >模拟扣减
           </el-button>
         </template>
       </el-table-column>
@@ -283,7 +291,7 @@
 </template>
 
 <script>
-import {addSku, delSku, getSku, listSku, updateSku} from "@/api/system/sku"
+import {addSku, delSku, getSku, listSku, updateSku, deductSku} from "@/api/system/sku"
 import {listSpu} from "@/api/system/spu"
 import request from '@/utils/request'
 
@@ -688,6 +696,29 @@ export default {
         const spec = this.form.specInfo.replace(/[,，\s]/g, '-');
         this.form.skuCode = `${this.selectedSpu.spuCode}-${spec}`;
       }
+    },
+    /**
+     * 模拟库存扣减 (视频演示用)
+     */
+    handleDeduct(row) {
+      this.$prompt('请输入扣减数量', '模拟 Kafka 削峰扣减', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        inputPattern: /^[1-9]\d*$/,
+        inputErrorMessage: '请输入正整数'
+      }).then(({ value }) => {
+        this.loading = true;
+        deductSku(row.id, value).then(response => {
+          this.$modal.msgSuccess("扣减指令已发送到 Kafka 队列");
+          // 延迟刷新列表，给 Kafka 消费者一点处理时间，增强视觉“最终一致性”效果
+          setTimeout(() => {
+            this.getList();
+            this.loading = false;
+          }, 1000);
+        }).catch(() => {
+          this.loading = false;
+        });
+      }).catch(() => {});
     }
   }
 }

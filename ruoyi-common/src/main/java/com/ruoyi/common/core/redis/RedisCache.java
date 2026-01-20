@@ -3,6 +3,7 @@ package com.ruoyi.common.core.redis;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.BoundSetOperations;
 import org.springframework.data.redis.core.HashOperations;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
@@ -15,7 +16,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author ruoyi
  **/
-@SuppressWarnings(value = {"unchecked", "rawtypes"})
+@SuppressWarnings(value = { "unchecked", "rawtypes" })
 @Component
 public class RedisCache {
     @Autowired
@@ -239,6 +240,38 @@ public class RedisCache {
      */
     public Collection<String> keys(final String pattern) {
         return redisTemplate.keys(pattern);
+    }
+
+    /**
+     * 设置原子数字（为了兼容 redis 的 incr/decr 原子操作，不使用序列化）
+     *
+     * @param key   键
+     * @param value 值
+     */
+    public void setCacheNumber(final String key, final long value) {
+        redisTemplate.execute((RedisCallback<Object>) connection -> {
+            connection.set(redisTemplate.getKeySerializer().serialize(key), String.valueOf(value).getBytes());
+            return null;
+        });
+    }
+
+    /**
+     * 获取原子数字
+     *
+     * @param key 键
+     * @return 结果
+     */
+    public Long getCacheNumber(final String key) {
+        byte[] result = (byte[]) redisTemplate.execute(
+                (RedisCallback<Object>) connection -> connection.get(redisTemplate.getKeySerializer().serialize(key)));
+        if (result == null) {
+            return null;
+        }
+        try {
+            return Long.parseLong(new String(result));
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**

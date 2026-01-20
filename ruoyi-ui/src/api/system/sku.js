@@ -42,3 +42,15 @@ export function delSku(id) {
     method: 'delete'
   })
 }
+
+// 模拟库存扣减 (展示 Kafka 削峰)
+export function deductSku(skuId, quantity) {
+  return request({
+    url: '/system/sku/deduct',
+    method: 'post',
+    params: {
+      skuId: skuId,
+      quantity: quantity
+    }
+  })
+}

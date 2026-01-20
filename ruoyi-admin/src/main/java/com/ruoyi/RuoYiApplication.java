@@ -14,9 +14,15 @@ import org.springframework.scheduling.annotation.EnableAsync;
  */
 @EnableAsync // 开启异步功能支持
 @EnableRetry // 开启重试功能支持
-@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
-@ComponentScan({"com.ruoyi", "com.john.cils"})
+@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
+@ComponentScan({ "com.ruoyi", "com.john.cils" })
 public class RuoYiApplication {
+    static {
+        System.out.println("=================================================");
+        System.out.println(">>>> [STATIC CHECK] RuoYiApplication 类已加载 <<<<");
+        System.out.println("=================================================");
+    }
+
     public static void main(String[] args) {
         // System.setProperty("spring.devtools.restart.enabled", "false");
         SpringApplication.run(RuoYiApplication.class, args);
