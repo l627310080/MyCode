@@ -6,7 +6,7 @@
 
 CILS (Cross-border Intelligent Listing System) 是一个针对跨境电商（Amazon, Shopee 等）多平台铺货场景设计的核心业务中台。
 
-针对传统 ERP 系统中**人工审核成本高、多语言上架繁琐、高并发库存超卖**等行业痛点，本项目引入了由 **Gemini / OpenAI / OpenRouter / DeepSeek** 构成的**四级 AI 智能降级链路**，以及 **Redis + Kafka 高并发架构**，实现了从商品录入、合规校验、自动翻译到多平台推送的全流程自动化闭环。
+针对传统 ERP 系统中**人工审核成本高、多语言上架繁琐、高并发库存超卖**等行业痛点，本项目引入了由 **Gemini / OpenAI / OpenRouter / DeepSeek** 构成的** AI 智能降级链路**，以及 **Redis + Kafka 高并发架构**，实现了从商品录入、合规校验、自动翻译到多平台推送的全流程自动化闭环。
 
 ## 🛠 技术栈 (Tech Stack)
 
@@ -23,7 +23,9 @@ CILS (Cross-border Intelligent Listing System) 是一个针对跨境电商（Ama
 
 ### 1. 🛡️ 基于 LLM 的多模态智能降级引擎
 摒弃了单一模型依赖，构建了一套**全能自愈 (Self-Healing)** 的 AI 校验系统。
-- **四级降级链路**：`Gemini (官方)` -> `OpenRouter (免费集群)` -> `DeepSeek(官方)` -> `OpenAI (终极保底)`。
+- **双轨智能降级链路**：
+  - **文本专线 (3级)**：`Gemini (官方)` -> `OpenRouter (免费集群轮询)` -> `DeepSeek (终极重试自愈)`。
+  - **视觉专线 (2级)**：`Gemini (官方)` -> `OpenAI (GPT-4o-mini 官方专线)`。
 - **智能视角路由**：自动识别请求类型，若包含图片则精准路由至支持视觉的模型专线（如 Gemini/GPT-4o），并针对 OpenAI 2025 新版API (Responses API) 进行了深度格式适配。
 - **DeepSeek 深度自愈**：为 DeepSeek 节点增加了 **“3次重试/5秒间隔”** 逻辑，极大地提升了系统在极端 API 限流环境下的生存能力。
 - **动态规则配置**：支持在数据库中动态配置校验 Prompt，无需重启服务即可生效。
@@ -51,11 +53,9 @@ CILS (Cross-border Intelligent Listing System) 是一个针对跨境电商（Ama
 
 1.  **商品准入**：运营人员在管理后台新增或修改 SPU/SKU 信息。
 2.  **触发风控**：系统根据配置（同步/异步）触发 AI 校验引擎。
-3.  **AI 降级巡航**：
-    -   首先调用 **Gemini** 进行图文一致性与合规性审查。
-    -   若 Gemini 限流或失败，自动切至 **OpenAI GPT-4o-mini** 视觉专线。
-    -   若官方渠道均不可用，进入 **OpenRouter** 免费集群轮询。
-    -   最后由 **DeepSeek** 提供带重试机制的终极自愈识别。
+3. **AI 双轨降级巡航**：
+    - **文本/翻译请求**：优先调用 **Gemini**；若失败则通过 **OpenRouter** 寻找免费替代模型；最后由 **DeepSeek** 进行 3次/5s 高频重试。
+    - **视觉/图片请求**：优先调用 **Gemini**；若失败则精准路由至 **OpenAI (GPT-4o-mini)** 官方专线，确保识别精度。
 4.  **审核决策**：
     -   **PASS**：自动生成商品 Mapping 记录，进入推送队列。
     -   **BLOCK**：拦截操作，记录失败原因并通知运营人员。
