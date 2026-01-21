@@ -29,14 +29,13 @@ import org.springframework.stereotype.Component;
 public class StockConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(StockConsumer.class);
+    @Autowired
+    private CilsProductSkuMapper skuMapper;
 
     @javax.annotation.PostConstruct
     public void init() {
         log.info(">>>> [DIAGNOSTIC] StockConsumer Bean 成功加载，准备监听 Kafka...");
     }
-
-    @Autowired
-    private CilsProductSkuMapper skuMapper;
 
     /**
      * 消费库存扣减消息

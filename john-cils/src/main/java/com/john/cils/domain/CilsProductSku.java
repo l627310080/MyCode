@@ -6,11 +6,7 @@ import com.john.cils.domain.dto.TargetMarketDTO;
 import com.john.cils.verification.domain.Verifiable;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -29,42 +25,62 @@ import java.util.List;
 public class CilsProductSku extends BaseEntity implements Verifiable {
     private static final long serialVersionUID = 1L;
 
-    /** 主键ID */
+    /**
+     * 主键ID
+     */
     private Long id;
 
-    /** 关联的SPU主键ID */
+    /**
+     * 关联的SPU主键ID
+     */
     @Excel(name = "关联的SPU主键ID")
     private Long spuId;
 
-    /** 内部SKU编码 */
+    /**
+     * 内部SKU编码
+     */
     @Excel(name = "内部SKU编码")
     private String skuCode;
 
-    /** 规格详情描述 */
+    /**
+     * 规格详情描述
+     */
     @Excel(name = "规格详情描述")
     private String specInfo;
 
-    /** SKU规格图 */
+    /**
+     * SKU规格图
+     */
     @Excel(name = "SKU规格图")
     private String skuImage;
 
-    /** 当前采购成本价(人民币) */
+    /**
+     * 当前采购成本价(人民币)
+     */
     @Excel(name = "当前采购成本价(人民币)")
     private BigDecimal purchasePrice;
 
-    /** 虚拟仓储可用库存总量 */
+    /**
+     * 虚拟仓储可用库存总量
+     */
     @Excel(name = "虚拟仓储可用库存总量")
     private Long stockQty;
 
-    /** 商品单件重量 */
+    /**
+     * 商品单件重量
+     */
     @Excel(name = "商品单件重量")
     private BigDecimal weightKg;
 
-    /** 审核状态 */
+    /**
+     * 审核状态
+     */
     @Excel(name = "审核状态")
     private Integer isAudit;
 
-    /** 逻辑删除标志 */
+    /**
+     * 逻辑删除标志
+     */
     @TableLogic
     private String delFlag;
 

@@ -19,24 +19,38 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TargetMarketDTO {
-    /** 平台映射ID (用于更新) */
+    /**
+     * 平台映射ID (用于更新)
+     */
     private Long id;
 
-    /** 平台类型 (AMAZON, SHOPEE) */
+    /**
+     * 平台类型 (AMAZON, SHOPEE)
+     */
     private String platform;
 
-    /** 目标国家 (US, UK, TH) */
+    /**
+     * 目标国家 (US, UK, TH)
+     */
     private String country;
 
-    /** 最终售价 */
+    /**
+     * 最终售价
+     */
     private BigDecimal price;
 
-    /** 币种 */
+    /**
+     * 币种
+     */
     private String currency;
 
-    /** 定价模式 (FIXED, MULTIPLIER) */
+    /**
+     * 定价模式 (FIXED, MULTIPLIER)
+     */
     private String priceMode;
 
-    /** 数值 (价格或倍数) */
+    /**
+     * 数值 (价格或倍数)
+     */
     private BigDecimal inputValue;
 }

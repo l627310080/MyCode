@@ -36,44 +36,35 @@ import java.util.stream.Collectors;
 public class CilsProductSkuServiceImpl implements ICilsProductSkuService {
 
     private static final Logger log = LoggerFactory.getLogger(CilsProductSkuServiceImpl.class);
+    private static final String INVENTORY_KEY_PREFIX = "inventory:sku:";
+    private static final String DETAIL_KEY_PREFIX = "sku_detail:";
+    private static final String TOPIC_STOCK_DEDUCT = "stock-deduct-topic";
+    @Autowired
+    private CilsProductSkuMapper cilsProductSkuMapper;
+    @Autowired
+    private CilsPlatformMappingMapper cilsPlatformMappingMapper;
+    @Autowired
+    private RedisCache redisCache;
+    @Autowired
+    private AsyncVerificationService asyncVerificationService;
+    @Autowired
+    private PlatformPushService platformPushService;
+    @Autowired
+    private KafkaTemplate<String, String> kafkaTemplate;
+    @Autowired
+    private ICilsPlatformMappingService mappingService;
+    @Autowired
+    private ExchangeRateService exchangeRateService;
 
     @javax.annotation.PostConstruct
     public void init() {
         log.info(">>>> [DIAGNOSTIC] CilsProductSkuService Bean 成功加载，KafkaTemplate 状态: {}", kafkaTemplate != null);
     }
 
-    @Autowired
-    private CilsProductSkuMapper cilsProductSkuMapper;
-
-    @Autowired
-    private CilsPlatformMappingMapper cilsPlatformMappingMapper;
-
-    @Autowired
-    private RedisCache redisCache;
-
-    @Autowired
-    private AsyncVerificationService asyncVerificationService;
-
-    @Autowired
-    private PlatformPushService platformPushService;
-
-    @Autowired
-    private KafkaTemplate<String, String> kafkaTemplate;
-
-    @Autowired
-    private ICilsPlatformMappingService mappingService;
-
-    @Autowired
-    private ExchangeRateService exchangeRateService;
-
-    private static final String INVENTORY_KEY_PREFIX = "inventory:sku:";
-    private static final String DETAIL_KEY_PREFIX = "sku_detail:";
-    private static final String TOPIC_STOCK_DEDUCT = "stock-deduct-topic";
-
     /**
      * 根据ID查询SKU详情，采用 Cache-Aside 缓存模式
      * 同时查询关联的平台映射信息，用于前端回显
-     * 
+     *
      * @param id SKU主键ID
      * @return SKU领域对象
      */
@@ -206,7 +197,7 @@ public class CilsProductSkuServiceImpl implements ICilsProductSkuService {
 
     /**
      * 更新SKU信息，包含关联 Mapping 的 Diff 更新
-     * 
+     *
      * @param cilsProductSku 待更新的SKU对象
      * @return 数据库受影响行数
      */
@@ -241,7 +232,7 @@ public class CilsProductSkuServiceImpl implements ICilsProductSkuService {
 
     /**
      * 智能更新关联的 Mapping (Diff 算法)
-     * 
+     *
      * @param sku 包含最新 Mapping 列表的 SKU 对象
      */
     private void updateMappings(CilsProductSku sku) {

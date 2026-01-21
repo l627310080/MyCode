@@ -18,16 +18,27 @@
     </resultMap>
 
     <sql id="selectCilsProductSpuVo">
-        select t1.id, t1.spu_code, t1.product_name, t1.category_id, t2.category_name, t1.main_image, t1.is_audit, t1.remark, t1.create_time, t1.update_time 
+        select t1.id,
+               t1.spu_code,
+               t1.product_name,
+               t1.category_id,
+               t2.category_name,
+               t1.main_image,
+               t1.is_audit,
+               t1.remark,
+               t1.create_time,
+               t1.update_time
         from cils_product_spu t1
-        left join cils_category t2 on t1.category_id = t2.category_id
+                 left join cils_category t2 on t1.category_id = t2.category_id
     </sql>
 
     <select id="selectCilsProductSpuList" parameterType="CilsProductSpu" resultMap="CilsProductSpuResult">
         <include refid="selectCilsProductSpuVo"/>
         <where>
             <if test="spuCode != null  and spuCode != ''">and t1.spu_code = #{spuCode}</if>
-            <if test="productName != null  and productName != ''">and t1.product_name like concat('%', #{productName}, '%')</if>
+            <if test="productName != null  and productName != ''">and t1.product_name like concat('%', #{productName},
+                '%')
+            </if>
             <if test="categoryId != null ">and t1.category_id = #{categoryId}</if>
             <if test="isAudit != null ">and t1.is_audit = #{isAudit}</if>
             and t1.del_flag = 0
@@ -79,7 +90,10 @@
     </update>
 
     <update id="deleteCilsProductSpuById" parameterType="Long">
-        update cils_product_spu set del_flag = '2', update_time = sysdate() where id = #{id}
+        update cils_product_spu
+        set del_flag    = '2',
+            update_time = sysdate()
+        where id = #{id}
     </update>
 
     <update id="deleteCilsProductSpuByIds" parameterType="String">

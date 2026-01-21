@@ -37,11 +37,12 @@ public interface CilsRuleConfigMapper {
      * @return 适用的规则列表
      */
     public List<CilsRuleConfig> selectRulesByTarget(@Param("targetObject") String targetObject);
-    
+
     /**
      * 根据目标对象和字段查询特定规则（用于获取模板）
+     *
      * @param targetObject TEMPLATE
-     * @param targetField checker_image / checker_text
+     * @param targetField  checker_image / checker_text
      * @return
      */
     public CilsRuleConfig selectRuleByTargetAndField(@Param("targetObject") String targetObject, @Param("targetField") String targetField);

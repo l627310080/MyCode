@@ -1,7 +1,6 @@
 package com.john.cils.verification.engine;
 
 import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import com.john.cils.domain.CilsCategory;
 import com.john.cils.domain.CilsProductSku;
 import com.john.cils.domain.CilsProductSpu;

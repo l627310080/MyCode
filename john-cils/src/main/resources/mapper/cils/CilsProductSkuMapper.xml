@@ -99,7 +99,10 @@
     </update>
 
     <update id="deleteCilsProductSkuById" parameterType="Long">
-        update cils_product_sku set del_flag = '2', update_time = sysdate() where id = #{id}
+        update cils_product_sku
+        set del_flag    = '2',
+            update_time = sysdate()
+        where id = #{id}
     </update>
 
     <update id="deleteCilsProductSkuByIds" parameterType="String">

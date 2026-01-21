@@ -28,17 +28,8 @@ import java.util.concurrent.TimeUnit;
 public class ExchangeRateService {
 
     private static final Logger log = LoggerFactory.getLogger(ExchangeRateService.class);
-
-    @Autowired
-    private RedisCache redisCache;
-
     // 汇率缓存 Key 前缀
     private static final String RATE_KEY_PREFIX = "exchange_rate:";
-    
-    // 从环境变量 EXCHANGERATE_API_KEY 中读取 API Key，如果找不到，则使用冒号后面的默认值
-    @Value("${EXCHANGERATE_API_KEY:7f52f4df413cf6df77ba9e16}")
-    private String apiKey;
-
     // 兜底汇率表 (当 API 不可用时使用)
     private static final Map<String, BigDecimal> DEFAULT_RATES = new HashMap<>();
 
@@ -49,6 +40,12 @@ public class ExchangeRateService {
         DEFAULT_RATES.put("THB", new BigDecimal("5.00"));
         DEFAULT_RATES.put("CNY", BigDecimal.ONE);
     }
+
+    @Autowired
+    private RedisCache redisCache;
+    // 从环境变量 EXCHANGERATE_API_KEY 中读取 API Key，如果找不到，则使用冒号后面的默认值
+    @Value("${EXCHANGERATE_API_KEY:7f52f4df413cf6df77ba9e16}")
+    private String apiKey;
 
     /**
      * 获取指定货币对人民币的汇率
@@ -82,10 +79,10 @@ public class ExchangeRateService {
     public void refreshRates() {
         log.info(">>> 开始同步每日汇率...");
         String url = "https://v6.exchangerate-api.com/v6/" + apiKey + "/latest/CNY";
-        
+
         try {
             String result = HttpUtils.sendGet(url);
-            
+
             if (StringUtils.isEmpty(result)) {
                 log.error("汇率 API 返回为空，跳过刷新");
                 return;
@@ -102,13 +99,13 @@ public class ExchangeRateService {
                 log.error("汇率 API 返回格式错误，找不到 conversion_rates 字段");
                 return;
             }
-            
+
             log.info("成功获取汇率数据，包含 {} 种货币", rates.size());
 
             updateCache("USD", rates);
             updateCache("GBP", rates);
             updateCache("THB", rates);
-            
+
             log.info("<<< 汇率同步完成");
 
         } catch (Exception e) {

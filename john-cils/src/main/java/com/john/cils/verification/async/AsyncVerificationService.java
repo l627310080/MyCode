@@ -106,7 +106,7 @@ public class AsyncVerificationService {
 
     /**
      * 触发指定 SKU 关联且处于“等待校验”状态的 Mapping 推送任务
-     * 
+     *
      * @param skuId SKU ID
      */
     private void triggerPushForSku(Long skuId) {
@@ -141,7 +141,7 @@ public class AsyncVerificationService {
 
     /**
      * 校验逻辑的核心实现
-     * 
+     *
      * @param data 待校验的数据对象
      * @return 校验结果
      */
