@@ -13,6 +13,8 @@ public class AmazonPushUtils {
 
     private static final Logger log = LoggerFactory.getLogger(AmazonPushUtils.class);
 
+    private static int pushCount = 0; // 演示用计数器
+
     /**
      * 模拟推送商品到 Amazon
      *
@@ -21,11 +23,20 @@ public class AmazonPushUtils {
      * @return 是否成功
      */
     public static boolean pushProduct(String skuCode, Double price) {
-        log.info("正在连接 Amazon API...");
+        pushCount++;
+        log.info(">>>> [演示] 正在连接 Amazon API... (第 {} 次尝试)", pushCount);
+
+        // 模拟前两次调用失败（网络波动/超时）
+        if (pushCount <= 2) {
+            log.error(">>>> [ERROR] Amazon API 连接异常！原因: Connection timeout");
+            throw new RuntimeException("Amazon API 连接超时 (Connection timeout)");
+        }
+
         try {
             Thread.sleep(1000); // 模拟网络延迟
-            log.info("上传商品数据: SKU={}, Price={}", skuCode, price);
+            log.info(">>>> [SUCCESS] 上传商品数据成功: SKU={}, Price={}", skuCode, price);
             log.info("Amazon API 返回: 200 OK");
+            pushCount = 0; // 成功后重置计数器
             return true;
         } catch (InterruptedException e) {
             log.error("推送中断", e);

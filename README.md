@@ -8,6 +8,11 @@ CILS (Cross-border Intelligent Listing System) 是一个针对跨境电商（Ama
 
 针对传统 ERP 系统中**人工审核成本高、多语言上架繁琐、高并发库存超卖**等行业痛点，本项目引入了由 **Gemini / OpenAI / OpenRouter / DeepSeek** 构成的** AI 智能降级链路**，以及 **Redis + Kafka 高并发架构**，实现了从商品录入、合规校验、自动翻译到多平台推送的全流程自动化闭环。
 
+## 📺 演示视频 (Demo Videos)
+
+- **[主视频] 本项目完整功能解说和演示视频**：[点击查看 (抖音)](https://v.douyin.com/06oNzU6Ru6o/)
+- **[补充录制] API 鲁棒性与多级降级容错机制演示**：[点击查看 (抖音)](https://v.douyin.com/P0GekMsiITQ/)
+
 ## 🛠 技术栈 (Tech Stack)
 
 - **核心框架**: Spring Boot 2.5.x (基于 Java 21 运行)
@@ -120,11 +125,13 @@ py_scripts          // AI 核心脚本库 (Python)
 
 ## 📝 开发计划 (Roadmap)
 
-- [x] SPU/SKU 核心管理
-- [x] AI 智能风控与翻译
-- [x] 高并发库存扣减
-- [ ] 对接 Amazon SP-API 真实沙箱环境
-- [ ] 引入 Sentinel 进行全链路熔断降级
+- [✔] SPU/SKU 核心管理
+- [✔] AI 智能风控与翻译
+- [✔] 高并发库存扣减
 
 ---
 *Author: John | Tech Stack: Java 21, Spring Boot 2.5, Vue 3*
+
+
+主视频  https://v.douyin.com/06oNzU6Ru6o/ w@S.yt 02/23 pqE:/
+容错机制补充  https://v.douyin.com/P0GekMsiITQ/ baN:/ g@b.nd 06/11

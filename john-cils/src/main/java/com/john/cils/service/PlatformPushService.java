@@ -11,6 +11,8 @@ import com.john.cils.utils.platform.AmazonPushUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -56,8 +58,9 @@ public class PlatformPushService {
      * 推送商品到平台 (异步执行)
      */
     @Async
+    @Retryable(value = Exception.class, maxAttempts = 3, backoff = @Backoff(delay = 2000))
     public void pushProduct(Long mappingId) {
-        log.info(">>> 准备执行异步推送任务，Mapping ID: {}", mappingId);
+        log.info(">>>> [演示] 开始执行推送任务，Mapping ID: {}", mappingId);
 
         CilsPlatformMapping mapping = mappingMapper.selectCilsPlatformMappingById(mappingId);
         if (mapping == null) {
@@ -122,8 +125,9 @@ public class PlatformPushService {
                 updateMappingStatus(mapping, 2L, "推送失败，请检查网络或平台配置");
             }
         } catch (Exception e) {
-            log.error("推送过程中发生未捕获异常", e);
-            updateMappingStatus(mapping, 2L, "推送异常: " + e.getMessage());
+            log.warn(">>>> [演示] 推送过程中捕捉到异常: {}. 准备触发 Spring Retry 自动重试...", e.getMessage());
+            // 如果是因为网络超时抛出的 RuntimeException，我们将其抛出给 @Retryable 处理
+            throw new RuntimeException(e);
         }
     }
 

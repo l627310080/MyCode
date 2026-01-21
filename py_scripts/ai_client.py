@@ -38,8 +38,11 @@ class AIClient:
 
     def call_text(self, prompt, model="gemini-2.5-flash"):
         """文本接口：Gemini -> OpenRouter -> DeepSeek (带重试)"""
-        print(f"DEBUG: [1/3] >>> 正在发起对 [Gemini] 的文本调用 (Model: {model})...", flush=True)
-        if self.gemini_client:
+        # --- 演示专场：如果检测到演示开关，强制跳过 Gemini 以观察降级 ---
+        if os.environ.get("AI_DEMO_FAIL_GEMINI") == "true":
+            print(">>>> [演示] 模拟 Gemini 服务不可用，准备启动降级链路...", flush=True)
+        elif self.gemini_client:
+            print(f"DEBUG: [1/3] >>> 正在发起对 [Gemini] 的文本调用 (Model: {model})...", flush=True)
             try:
                 response = self.gemini_client.models.generate_content(model=model, contents=prompt)
                 result = response.text
@@ -81,8 +84,11 @@ class AIClient:
 
     def call_vision(self, image_base64, prompt, model="gemini-2.5-flash"):
         """视觉接口：Gemini -> OpenAI (精准降级)"""
-        print(f"DEBUG: [1/2] >>> 正在发起对 [Gemini] 的视觉调用 (Model: {model})...", flush=True)
-        if self.gemini_client:
+        # --- 演示专场：视觉降级模拟 ---
+        if os.environ.get("AI_DEMO_FAIL_GEMINI") == "true":
+            print(">>>> [演示] 模拟 Gemini 视觉识别超时，切换至 OpenAI 专线...", flush=True)
+        elif self.gemini_client:
+            print(f"DEBUG: [1/2] >>> 正在发起对 [Gemini] 的视觉调用 (Model: {model})...", flush=True)
             try:
                 image_bytes = base64.b64decode(image_base64)
                 response = self.gemini_client.models.generate_content(
