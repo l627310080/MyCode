@@ -97,7 +97,20 @@
         </trim>
         where id = #{id}
     </update>
-
+    <update id="updateBatchStock" parameterType="java.util.List">
+        update cils_product_sku
+        <trim prefix="set" suffixOverrides=",">
+            <trim prefix="stock_qty = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    when id = #{item.id} then #{item.stockQty}
+                </foreach>
+            </trim>
+        </trim>
+        where id in
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item.id}
+        </foreach>
+    </update>
     <update id="deleteCilsProductSkuById" parameterType="Long">
         update cils_product_sku
         set del_flag    = '2',

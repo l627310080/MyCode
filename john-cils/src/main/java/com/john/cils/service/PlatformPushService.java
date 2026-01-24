@@ -140,7 +140,8 @@ public class PlatformPushService {
 
     @Async
     public void syncStock(Long skuId) {
-        log.info(">>> 开始同步库存到外部平台，SKU ID: {}", skuId);
+        // 做压测，日志暂时关闭
+//        log.info(">>> 开始库存到外部平台，SKU ID: {}", skuId);
 
         CilsPlatformMapping query = new CilsPlatformMapping();
         query.setSkuId(skuId);
@@ -155,16 +156,20 @@ public class PlatformPushService {
             // --- 状态守卫：只有处于“待同步(0)”或“已同步(1)”状态的记录才允许同步库存 ---
             // 处于“待校验(3)”状态的记录严禁同步库存到外部平台
             if (mapping.getSyncStatus() != 0L && mapping.getSyncStatus() != 1L) {
-                log.warn("拦截库存同步：Mapping ID {} 处于非铺货状态 ({}), 严禁库存下发", mapping.getId(), mapping.getSyncStatus());
+                // 这里做压测，日志暂时关闭
+//                log.warn("拦截库存同步：Mapping ID {} 处于非铺货状态 ({}), 严禁库存下发", mapping.getId(), mapping.getSyncStatus());
                 continue;
             }
 
+            // 这里没有调用真实接口，只是写一个示例
             if ("AMAZON".equalsIgnoreCase(mapping.getPlatformType())) {
-                log.info("正在同步 Amazon 库存，Platform SKU: {}", mapping.getPlatformSku());
+                // 这里做压测，日志暂时关闭
+//                log.info("正在同步 Amazon 库存，Platform SKU: {}", mapping.getPlatformSku());
                 AmazonPushUtils.syncStock(mapping.getPlatformSku(), 99L);
             }
         }
 
-        log.info("<<< 库存同步任务完成");
+        // 这里做压测，日志暂时关闭
+//        log.info("<<< 库存同步任务完成");
     }
 }

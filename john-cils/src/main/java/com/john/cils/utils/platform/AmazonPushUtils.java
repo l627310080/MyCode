@@ -52,7 +52,7 @@ public class AmazonPushUtils {
      * @return 是否成功
      */
     public static boolean syncStock(String skuCode, Long stock) {
-        log.info("正在同步库存到 Amazon: SKU={}, Stock={}", skuCode, stock);
+//        log.info("正在同步库存到 Amazon: SKU={}, Stock={}", skuCode, stock);
         return true;
     }
 }

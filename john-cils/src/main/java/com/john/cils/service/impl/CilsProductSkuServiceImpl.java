@@ -19,8 +19,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.concurrent.atomic.AtomicLong;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.util.concurrent.ListenableFutureCallback;
+
+import java.util.concurrent.Executor;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -53,8 +60,13 @@ public class CilsProductSkuServiceImpl implements ICilsProductSkuService {
     private KafkaTemplate<String, String> kafkaTemplate;
     @Autowired
     private ICilsPlatformMappingService mappingService;
+    // 1. 采样计数器（用于每1000条打一次日志）
+    private final AtomicLong logCounter = new AtomicLong(0);
+
+    // 2. 注入自定义线程池
     @Autowired
-    private ExchangeRateService exchangeRateService;
+    @Qualifier("platformSyncExecutor")
+    private Executor platformSyncExecutor;
 
     @javax.annotation.PostConstruct
     public void init() {
@@ -331,38 +343,81 @@ public class CilsProductSkuServiceImpl implements ICilsProductSkuService {
         return rows;
     }
 
+    /**
+     * 扣减库存核心逻辑 (加固版)
+     * * 流程：Redis 原子扣减 -> 采样日志 -> Kafka 异步落库 -> 线程池异步同步平台
+     * 保证：不超卖、不丢单（配合 CallerRunsPolicy 拒绝策略）、全链路可追溯
+     */
     @Override
     public boolean deductStock(Long skuId, Integer quantity) {
-        System.out.println(">>>> [SERVICE] 进入 deductStock 逻辑, skuId=" + skuId);
+        // 定义要测试卖的商品
         String inventoryKey = INVENTORY_KEY_PREFIX + skuId;
-        Long remainingStock = redisCache.decrBy(inventoryKey, quantity);
 
-        if (remainingStock >= 0) {
-            log.info(">>> Redis 扣减成功，SKU: {}, 剩余库存: {}", skuId, remainingStock);
+        try {
+            // 1. 先 Redis 原子扣减
+            // decrBy 返回扣减后的结果。若 Key 不存在，Redis 会先初始化为 0 再扣减，结果为负。
+            // 获得库存余额
+            Long remainingStock = redisCache.decrBy(inventoryKey, quantity);
 
-            JSONObject message = new JSONObject();
-            message.put("skuId", skuId);
-            message.put("remainingStock", remainingStock);
+            // 2. 判断库存是否足够
+            if (remainingStock >= 0) {
+                // --- 采样日志逻辑 ---
+                // 每 1000 次请求打印一次，避免高并发下日志 I/O 成为系统瓶颈
+                // log写多了会大大减缓执行速度
+                long currentCount = logCounter.incrementAndGet();
+                if (currentCount % 1000 == 0) {
+                    log.info(">>> [PERF-REPORT] 累计请求: {}, SKU: {}, 剩余库存: {}",
+                            currentCount, skuId, remainingStock);
+                }
 
-            try {
-                System.out.println(">>>> [SERVICE] 正在发送 Kafka 消息: " + message.toJSONString());
-                kafkaTemplate.send(TOPIC_STOCK_DEDUCT, message.toJSONString());
-                System.out.println(">>>> [SERVICE] Kafka 消息已发出");
-                log.info(">>> Kafka 消息发送成功: {}", message);
-                platformPushService.syncStock(skuId);
-            } catch (Exception e) {
-                log.error("Kafka 发送失败，回滚 Redis 库存", e);
+                // 3. 封装消息对象
+                JSONObject message = new JSONObject();
+                message.put("skuId", skuId);
+                message.put("remainingStock", remainingStock);
+
+                // 4. 发送 Kafka 消息，实现 MySQL 最终一致性更新
+                try {
+                    // 监听返回，确保消息可靠送达
+                    kafkaTemplate.send(TOPIC_STOCK_DEDUCT, message.toJSONString())
+                            .addCallback(
+                                    result -> {}, // 成功后回调——无需处理
+                                    ex -> {
+                                        // 失败回调——记录日志到 sys-error.log，用于后续人工对账补偿
+                                        log.error(">>>> [FATAL] Kafka 投递失败！SKU: {}, 原因: {}", skuId, ex.getMessage());
+                                    }
+                            );
+
+                    // 5. 异步同步外部平台（如 Amazon），通知库存扣减
+                    // 使用自建的 platformSyncExecutor 线程池，配置为 CallerRunsPolicy 确保任务不丢失
+                    platformSyncExecutor.execute(() -> {
+                        try {
+                            platformPushService.syncStock(skuId);
+                        } catch (Exception e) {
+                            log.warn(">>> [ASYNC-WARN] 平台同步失败，SKU: {}", skuId);
+                        }
+                    });
+
+                } catch (Exception e) {
+                    // 6. 异常回滚：若 Kafka 发送抛出即时异常，必须回加 Redis 库存防止漏记
+                    log.error(">>> Kafka 发送瞬时异常，执行回滚. SKU: {}", skuId);
+                    redisCache.incrBy(inventoryKey, quantity);
+                    return false;
+                }
+
+                // 7. 售罄触发器
+                if (remainingStock == 0) {
+                    triggerOffShelf(skuId);
+                }
+                return true;
+            } else {
+                // 8. 超卖保护：若扣减后小于0，需将减去的库存加回来
                 redisCache.incrBy(inventoryKey, quantity);
+                log.warn(">>> 库存不足拦截: SKU={}, 尝试扣减={}, 剩余={}", skuId, quantity, remainingStock);
                 return false;
             }
-
-            if (remainingStock == 0) {
-                triggerOffShelf(skuId);
-            }
-            return true;
-        } else {
-            redisCache.incrBy(inventoryKey, quantity);
-            log.warn("库存不足，扣减失败。SKU: {}", skuId);
+        } catch (Exception e) {
+            // 9. 捕捉 Redis 类型错误 (如 ERR value is not an integer)
+            log.error(">>> Redis 操作致命错误: {}, 请检查 Key 数据格式", e.getMessage());
             return false;
         }
     }

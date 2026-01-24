@@ -98,11 +98,14 @@ public class CilsProductSkuController extends BaseController {
     }
 
     /**
-     * 扣减库存 (高并发接口)
+     * 模拟黑五等大促的接口
+     * ————这个接口其实是在模拟黑五等大促活动时，同步亚马逊等平台告诉它们我们还有多少库存
+     *      形成的就是redis接住来自平台的库存-1的消息，如果卖完了，就告诉平台；接下来由kafka接管，保证数据正确
+     *      也配合当前代码实际业务情况，设计了一个自定义线程池模拟同时扣减多个平台的库存的情况
      */
     @PostMapping("/deduct")
     public AjaxResult deductStock(@RequestParam Long skuId, @RequestParam Integer quantity) {
-        System.out.println(">>>> [CONTROLLER] 收到扣减请求: skuId=" + skuId + ", qty=" + quantity);
+//        System.out.println(">>>> [CONTROLLER] 收到扣减请求: skuId=" + skuId + ", qty=" + quantity);
         boolean success = cilsProductSkuService.deductStock(skuId, quantity);
         if (success) {
             return success("库存扣减成功");

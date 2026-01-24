@@ -60,4 +60,6 @@ public interface CilsProductSkuMapper {
      * @return 结果
      */
     public int deleteCilsProductSkuByIds(Long[] ids);
+
+    void updateBatchStock(List<CilsProductSku> updateList);
 }

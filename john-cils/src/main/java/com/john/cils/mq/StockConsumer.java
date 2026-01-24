@@ -11,6 +11,11 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * 库存扣减消息消费者
  * <p>
@@ -40,48 +45,48 @@ public class StockConsumer {
     /**
      * 消费库存扣减消息
      *
-     * @param message 消息内容 (JSON 字符串)
-     * @param ack     手动确认对象，用于在处理成功后通知 Kafka
+     * @param messages 消息list (JSON 字符串)
+     * @param ack      手动确认对象，用于在处理成功后通知 Kafka
      */
-    @KafkaListener(topics = "stock-deduct-topic", groupId = "cils-group")
-    public void handleStockDeduct(String message, Acknowledgment ack) {
-        System.out.println(">>>> [CONSUMER] 捕获到 Kafka 消息: " + message);
-        log.info(">>> 收到 Kafka 库存扣减消息: {}", message);
+    @KafkaListener(topics = "stock-deduct-topic", groupId = "cils-group", containerFactory = "batchFactory")
+    public void handleStockDeductBatch(List<String> messages, Acknowledgment ack) {
+        long startTime = System.currentTimeMillis();
+        // 使用 Map 去重，Key 是 skuId，Value 是最新的 sku 对象
+        Map<Long, CilsProductSku> latestUpdateMap = new HashMap<>();
 
         try {
-            // 1. 解析消息
-            JSONObject msgObj = JSON.parseObject(message);
-            Long skuId = msgObj.getLong("skuId");
-            Long remainingStock = msgObj.getLong("remainingStock");
+            // 循环消息并进行库存扣减
+            for (String message : messages) {
+                JSONObject msgObj = JSON.parseObject(message);
+                Long skuId = msgObj.getLong("skuId");
+                Long remainingStock = msgObj.getLong("remainingStock");
 
-            // 确保消息内容有效
-            if (skuId != null && remainingStock != null) {
-                // 2. 更新数据库
-                // 创建一个只包含 ID 和库存的对象，用于更新
-                CilsProductSku skuToUpdate = new CilsProductSku();
-                skuToUpdate.setId(skuId);
-                skuToUpdate.setStockQty(remainingStock);
-
-                // 执行数据库更新操作
-                // 这里是直接覆盖库存，而不是减去库存，保证了操作的幂等性
-                // 即使消息被重复消费，数据库的最终结果也是正确的
-                skuMapper.updateCilsProductSku(skuToUpdate);
-
-                log.info(">>> MySQL 数据库库存更新成功。SKU: {}, 最新库存: {}", skuId, remainingStock);
-            } else {
-                log.warn("收到的 Kafka 消息格式不正确，已忽略: {}", message);
+                // 先筛查无效数据并封装数据——这里是直接替换余额，而不是-1，保证数据无误
+                if (skuId != null && remainingStock != null) {
+                    CilsProductSku sku = new CilsProductSku();
+                    sku.setId(skuId);
+                    sku.setStockQty(remainingStock);
+                    latestUpdateMap.put(skuId, sku);
+                }
             }
 
-            // 3. 手动确认消息
-            // 告诉 Kafka 这条消息已经成功处理，可以从队列中移除了
+            // 批量提交数据库
+            if (!latestUpdateMap.isEmpty()) {
+                // 把map去重后的结果放入数据库
+                List<CilsProductSku> updateList = new ArrayList<>(latestUpdateMap.values());
+                skuMapper.updateBatchStock(updateList);
+            }
+
+            // 确认签收——告诉kafka这批数据已正确处理
             ack.acknowledge();
-            log.info("<<< Kafka 消息已确认");
+
+            // 统计日志：每处理一批（如500条）才打印一次
+            long duration = System.currentTimeMillis() - startTime;
+            log.info(">>> [BATCH SUCCESS] 原始消息: {} 条, 聚合更新: {} 条, 耗时: {}ms",
+                    messages.size(), latestUpdateMap.size(), duration);
 
         } catch (Exception e) {
-            log.error("消费库存消息时发生异常，将等待 Kafka 自动重试", e);
-            // 注意：这里没有调用 ack.acknowledge()
-            // Kafka 在检测到消息未被确认后，会在一段时间后重新投递这条消息
-            // 实际生产中，如果持续失败，需要配置死信队列 (DLQ) 来处理这些“毒丸”消息
+            log.error("批量消费异常", e);
         }
     }
 }

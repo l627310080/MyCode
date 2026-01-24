@@ -41,9 +41,6 @@ public class VerificationEngine {
     private CilsRuleConfigMapper ruleConfigMapper;
 
     public VerificationResult executeBatch(Verifiable data, List<CilsRuleConfig> rules) {
-        if (rules == null || rules.isEmpty()) {
-            return VerificationResult.pass();
-        }
 
         log.info(">>> 开始执行校验引擎，对象: {}, 规则数量: {}", data.getIdentity(), rules.size());
 
