@@ -1,6 +1,6 @@
 # CILS - 智能跨境电商 ERP 核心系统 (Intelligent Cross-Border ERP Core)
 
-> 基于 Java 21 + Spring Boot 2.5 + python构建的跨境电商中台，集成了 LLM 智能风控、多语言自动翻译及高并发库存管理能力。
+> 基于 Java 8 + Spring Boot 2.5 + python构建的跨境电商中台，集成了 LLM 智能风控、多语言自动翻译及高并发库存管理能力。
 
 ## 📖 项目简介 (Introduction)
 
@@ -16,7 +16,7 @@ CILS (Cross-border Intelligent Listing System) 是一个针对跨境电商（Ama
 
 ## 🛠 技术栈 (Tech Stack)
 
-- **核心框架**: Spring Boot 2.5.x (基于 Java 21 运行)
+- **核心框架**: Spring Boot 2.5.x (基于 Java 8 运行)
 - **数据库**: MySQL 8.0 (MyBatis-Plus)
 - **缓存与并发**: Redis (原子指令 DECRBY, Cache Aside 模式)
 - **消息队列**: Apache Kafka (流量削峰, 最终一致性)
@@ -115,4 +115,4 @@ py_scripts          // AI 核心脚本库 (Python)
 - [✔] 高并发库存扣减
 
 ---
-*Author: John | Tech Stack: Java 21, Spring Boot 2.5, Vue 2*
+*Author: John | Tech Stack: Java 8, Spring Boot 2.5, Vue 2*
